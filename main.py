@@ -237,7 +237,8 @@ async def read():
                     logger.info(f"ACTIVITY: {" ".join(args[1:])}")
                     await bot.change_presence(activity=discord.CustomActivity(name=" ".join(args[1:])))
                 case "toggle:":
-                    await stuff.change_toggles(config,args[1])
+                    if args[1]:
+                        await stuff.change_toggles(config,args[1])
                 case _:
                     if target_channel and message_content:
                         try:
@@ -489,6 +490,10 @@ class Fun(commands.Cog):
     @app_commands.describe(by="A member to being freaky to me")
     async def freaky(self, ctx: commands.Context, by: discord.Member = None):
         await ctx.send(f"please stop... <@{by.id if by else ctx.author.id}>... 🥵")
+    
+    @commands.hybrid_command(name="pox_schooldate",description="Check if owner of the bot is in school")
+    async def check_schooldate(self,ctx):
+        await ctx.send(f"Pox is {"in school day 3:" if stuff.is_weekday(datetime.now(pytz.timezone("Asia/Tokyo"))) else "not in school day! >:D"}")
 
 class Converters(commands.Cog):
     def __init__(self,bot):
@@ -598,6 +603,18 @@ class Utility(commands.Cog):
     async def check_uptime(self,ctx: commands.Context):
         global start_time
         await ctx.send("me hav been for {}..! >:3".format(stuff.get_formatted_from_seconds(round(time.time() - start_time))))
+    
+    @commands.hybrid_command(name="nyanbot",description="Nyan bot.")
+    async def nyan_bot(self, ctx):
+        try:
+            url = os.path.dirname(__file__)
+            url2 = os.path.join(url,"images/windows_flavored_off_thing_staticc.gif")
+            with open(url2, 'rb') as f:
+                pic = discord.File(f)
+            await ctx.send("THINK FAST, CHUCKLE NUTS!",file=pic)
+        except Exception as e:
+            await ctx.send(f"Error! {e} 3:")
+        
 
 def save():
     stuff.save(config)
