@@ -220,24 +220,74 @@ def get_formatted_from_seconds(seconds):
     seconds %= 60
     return f"{hour} hours {minute} minutes {seconds} seconds"
 
+def get_case_pattern(word):
+    return [char.isupper() for char in word]
+
+def apply_case_pattern(word, pattern):
+    new_word = ""
+    for i, char in enumerate(word):
+        if i < len(pattern) and pattern[i]:
+            new_word += char.upper()
+        else:
+            new_word += char.lower()
+    return new_word
+
 def meow_clean_phrase(phrase):
     return ''.join(char for char in phrase if char.isalpha() or char.isspace())
 
 def to_meow_weighted(word):
+    numberd = [0,1,2]
+    weightgg = [50,2,1]
+    ran = random.choices(numberd,weights=weightgg)[0]
+    meows = ["meow","miaw","maow"]
+    first_char = word[0] if word else None
     length = len(word)
     if not length:
         return ""
     
-    if length < 4:
-        return "meow"
+    case_pattern = get_case_pattern(word)
     
-    weights = {'m':25,'e':33,'o':50,'w':28}
+    if length == 3:
+        return apply_case_pattern("maw",case_pattern)
+    elif length < 4:
+        return apply_case_pattern(meows[ran],case_pattern)
+    
+    """
+    if length < 4:
+        if word.isupper():
+            return "MEOW"
+        elif word.islittle():
+            return "Meow"
+        else:
+            return "meow"
+    """
+    
+    weights = {
+        'm':3,
+        'e':3,
+        'i':3,
+        'o':3,
+        'a':3,
+        'w':3
+    }
     total_weight = sum(weights.values())
     
-    mc = round(length * (weights['m'] / total_weight))
-    ec = round(length * (weights['e'] / total_weight))
-    oc = round(length * (weights['o'] / total_weight))
-    wc = round(length * (weights['w'] / total_weight))
+    match ran:
+        case 0:
+            mc = round(length * (weights['m'] / total_weight))
+            ec = round(length * (weights['e'] / total_weight))
+            oc = round(length * (weights['o'] / total_weight))
+            wc = round(length * (weights['w'] / total_weight))
+        case 1:
+            mc = round(length * (weights['m'] / total_weight))
+            ec = round(length * (weights['i'] / total_weight))
+            oc = round(length * (weights['a'] / total_weight))
+            wc = round(length * (weights['w'] / total_weight))
+        case 2:
+            mc = round(length * (weights['m'] / total_weight))
+            ec = round(length * (weights['a'] / total_weight))
+            oc = round(length * (weights['o'] / total_weight))
+            wc = round(length * (weights['w'] / total_weight))
     
     current_length = mc + ec + oc + wc
     diff = length - current_length
@@ -249,7 +299,22 @@ def to_meow_weighted(word):
         oc -= abs(diff//2)
         ec -= abs(diff) - abs(diff//2)
     
-    return ("m"*mc)+("e"*ec)+("o"*oc)+("w"*wc)
+    match ran:
+        case 0:
+            meow_word = ("m"*mc)+("e"*ec)+("o"*oc)+("w"*wc)
+        case 1:
+            meow_word = ("m"*mc)+("i"*ec)+("a"*oc)+("w"*wc)
+        case 2:
+            meow_word = ("m"*mc)+("a"*ec)+("o"*oc)+("w"*wc)
+    '''
+    if first_char is not None:
+        if first_char.isupper() and word.isupper():
+            return meow_word.upper()
+        elif first_char.isupper():
+            return meow_word.capitalize()
+    '''
+    
+    return apply_case_pattern(meow_word, case_pattern)
 
 def meow_phrase_weighted(phrase):
     final_phrase = ""
