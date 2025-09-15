@@ -1,0 +1,10 @@
+.env
+data/**
+images/**
+logs/**
+__pycache__/**
+.venv/**
+
+leaderboard.db
+settings.json
+test.py

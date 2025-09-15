@@ -1,0 +1,601 @@
+import platform
+import sys
+import asyncio
+import random
+import json
+import uuid
+import os
+import logging
+import logging.handlers
+import base64
+import sqlite3
+import atexit
+import time
+
+from aiohttp import web
+
+import discord
+import pytz
+import uwuipy
+import distro
+import ollama
+import aioconsole
+
+from dotenv import load_dotenv
+from datetime import datetime, UTC, timezone,timedelta
+from discord.ext import commands
+from pydub.playback import play
+from discord import app_commands
+from discord.ext import tasks
+from profanityfilter import ProfanityFilter
+
+import stuff
+import data
+import help_command
+
+load_dotenv()
+
+stuff.create_dir_if_not_exists("./logs")
+
+if not os.path.exists("./settings.json"):
+    with open('settings.json','w') as f:
+        json.dump({},f,indent=4,ensure_ascii=False)
+
+with open("settings.json",'r') as f:
+    config = json.load(f)
+
+stuff.set_if_not_exists(config,"leaderboard_db","leaderboard.db")
+stuff.set_if_not_exists(config,"last_channel",None)
+stuff.set_if_not_exists(config,"last_guild",None)
+stuff.set_if_not_exists(config,"global_messages",None)
+stuff.set_if_not_exists(config,"last_activity",":3")
+stuff.set_if_not_exists(config,"toggles",{
+    'uwuify': False,
+    'base64': False,
+    'muffle': False,
+    'censor': False,
+    'shout': False,
+    'repeat': False,
+    'send': False,
+})
+stuff.set_if_not_exists(config,"ai_lockdown",False)
+stuff.set_if_not_exists(config,"ai_uwuify", False)
+
+start_time = time.time()
+
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
+
+logging.getLogger('discord.http').setLevel(logging.INFO)
+
+handler = logging.handlers.RotatingFileHandler(
+    filename="logs/discord.log",
+    encoding='utf-8',
+    maxBytes=32*1024*1024,
+    backupCount=128,
+)
+
+dt_fmt = '%Y-%m-%d %H:%M:%S'
+formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+bot_token = stuff.get_bot_token()
+
+pf = ProfanityFilter()
+
+def save_lastchannel_id(id):
+    if not os.path.exists("data"):
+        os.makedirs("data")
+    
+    filepath = os.path.join("data","last_channel")
+    config['last_channel'] = id
+
+def get_lastchannel_id():
+    return config['last_channel'] if 'last_channel' in config.keys() else None
+
+intents = discord.Intents.all()
+intents.message_content = True
+intents.members = True
+
+INACTIVITY_THRESHOLD = 300
+
+WS_TOKEN = "3yc"
+
+bot = commands.AutoShardedBot(intents=intents, command_prefix=commands.when_mentioned_or("pox!"), help_command=help_command.MyHelpCommand())
+tree = bot.tree
+
+target_id = 1413813193616261135
+target_channel = None
+session_uuid = uuid.uuid4()
+
+last_interaction = datetime.now(UTC)
+handled_messages = 0
+current_guild = 0
+
+last_channel_id = get_lastchannel_id() or target_id
+
+@bot.event
+async def on_ready():
+    global target_channel, target_id,last_channel_id
+    logger.debug(f"Logged in as {bot.user.name if bot.user else "Unknown"}!")
+    target_channel = bot.get_channel(last_channel_id)
+    await bot.change_presence(activity=discord.CustomActivity(name=config['last_activity'] if config['last_activity'] else "meow :)"))
+    logger.info(f"Current guild: {target_channel.guild.name if target_channel and target_channel.guild else "Unknown guild"}") # type: ignore
+    logger.info(f"Current channel: #{target_channel.name if target_channel else "Unknown channel"}") # type: ignore
+    stuff.setup_database(config['leaderboard_db'])
+    await bot.add_cog(Fun(bot))
+    await bot.add_cog(Manage(bot))
+    await bot.add_cog(Utility(bot))
+    await bot.add_cog(LLM(bot))
+    await tree.sync()
+    check_inactivity.start()
+    bot.loop.create_task(read())
+
+@tasks.loop(seconds=60)
+async def check_inactivity():
+    global last_interaction
+    timesince_last_interaction = (datetime.now(UTC).timestamp() - last_interaction.timestamp())
+
+    if timesince_last_interaction >= INACTIVITY_THRESHOLD:
+        if bot.activity and bot.activity.name != "zzz...":
+            await bot.change_presence(activity=discord.Game(name="zzz..."))
+            print("Bot has been inactive.")
+            logger.debug("Bot has been inactive.")
+
+uwu = uwuipy.Uwuipy(power=4,action_chance=0,stutter_chance=0.025,face_chance=0.001)
+
+async def llm_response(ctx, prompt: str, bypass_check: bool = False):
+    global config
+    if config['ai_lockdown']:
+        await ctx.send("i can't talk rn~! 3:")
+        return
+    
+    if not bypass_check and pf.is_profane(prompt):
+        await ctx.send("i don't like bad woords!!! 3:<")
+        return
+    
+    history2 = [
+        {"role": "system", "content": "Make sure to add :3 faces in response"}
+    ]
+
+    #conversation_history.append({
+    #    "channel": ctx.channel.id,
+    #    "message": ctx.message.content
+    #})
+
+
+    
+    #for item in conversation_history:
+    #    if ctx.channel.id == item['channel']:
+    #        history2.append({'role': 'user', 'content': item['message']})
+    
+    async with ctx.typing():
+        try:
+            stream = ollama.chat(
+                model="gemma3:1b",
+                #messages=history2,
+                messages=[
+                    #{'role': 'system', 'content': "Make sure to short your response. do not include any of urls or sensitive words or even extra words."},
+                    {'role': 'system', 'content': "Make sure to short your response :3"},
+                    {'role': 'user', 'content': prompt}
+                ],
+                stream=True
+            )
+
+            full = ""
+            for part in stream:
+                full += part['message']['content']
+            
+            if len(full) > 250:
+                await ctx.send("awwww i'm yapping so loud!! 3:")
+                return
+            
+            lowered = full.lower()
+            if any(phrase in lowered for phrase in data.AI_RESPONSE_UNABLE):
+                await ctx.send("nawh it sounds bad 3:")
+                return
+            
+            result = pf.censor(full)
+
+            if config['ai_uwuify']:
+                result = uwu.uwuify(result)
+            
+            await ctx.send(result)
+        except Exception as e:
+            await ctx.send(f"whoopsie- {e} error... 3:")
+
+
+async def read():
+    global target_channel,last_channel_id,last_interaction
+    while True:
+        message_content = await aioconsole.ainput("")
+        args = message_content.lower().split(" ")
+        if message_content:
+            match args[0]:
+                case 'exit':
+                    print("3:")
+                    logger.info("3:")
+                    return
+                case "channel:" :
+                    if await stuff.isInt(args[1]):
+                        channelid = int(args[1])
+                        channel_temp = bot.get_channel(channelid)
+                        if channel_temp:
+                            target_channel = channel_temp
+                            save_lastchannel_id(channelid)
+                            last_channel_id = channelid
+                            logger.info(f"BOT: {message_content}")
+                            print(f"Channel changed to {target_channel.guild.name}'s {target_channel.name}! :3") # type: ignore
+                            #await target_channel.send(uwu.uwuify("Hello from some other nan channel in a row! :3"))
+                case "activity:":
+                    logger.info(f"ACTIVITY: {" ".join(args[1:])}")
+                    await bot.change_presence(activity=discord.CustomActivity(name=" ".join(args[1:])))
+                case "toggle:":
+                    await stuff.change_toggles(config['toggles'],args[1])
+                case _:
+                    if target_channel and message_content:
+                        try:
+                            censored = message_content
+
+                            try:
+                                if config['toggles']['repeat']:
+                                    censored = stuff.format_extra(censored)
+                                if config['toggles']['uwuify']:
+                                    censored = stuff.uwuify(uwu,censored)
+                                if config['toggles']['muffle']:
+                                    censored = stuff.muffle(censored)
+                                if config['toggles']['base64']:
+                                    censored = base64.b64encode(censored.encode()).decode()
+                                if config['toggles']['censor']:
+                                    censored = stuff.censor(pf,censored)
+                                if config['toggles']['shout']:
+                                    censored = f"# **{censored.replace("*",r"\*")}**"
+                                last_interaction = datetime.now(UTC)
+
+                                if bot.activity and bot.activity.name == "zzz...":
+                                    await bot.change_presence(activity=discord.CustomActivity(name="O_O"))
+                                logger.info(f"BOT: {censored}")
+                                await target_channel.send(censored)
+                            except Exception as e:
+                                await target_channel.send(f"Failed to process message from bot. {e}")
+                        except Exception as e:
+                            await target_channel.send(f"{e} 3:")
+        else:
+            print("Channel not connected by unknown reason.")
+
+@bot.event
+async def on_message(message: discord.Message):
+    global last_interaction,handled_messages
+    #logger.info(f"[{message.guild.id}] {message.author.global_name} (@{message.author.name}): {message.content}")
+    handled_messages += 1
+    temp = f"{message.author.display_name} ({message.author.name})" if (message.author.display_name and message.author.display_name != message.author.name) else f"@{message.author.name}"
+    temp2 = []
+    if message.author.system:
+        temp2.append("[SYS]")
+    if message.author.bot:
+        temp2.append("[BOT]")
+    if message.channel == target_channel:
+        logger.info(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{"\n(Contains attachment)" if message.attachments else ""}")
+    else:
+        logger.debug(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{"\n(Contains attachment)" if message.attachments else ""}")
+    if message.author == bot.user:
+        return
+    if message.mention_everyone:
+        return
+    
+    if bot.user.mentioned_in(message) == True or bot.user in message.mentions:
+        prompt = message.content.replace(f'<@{bot.user.id}>','').strip()
+        if not prompt:
+            return
+        if message.content.startswith("pox!"):
+            await bot.process_commands(message)
+        else:
+            await message.reply(prompt)
+    
+    pox_word_count = 0
+    separated_words = message.content.split(" ")
+    
+    if "pox" in message.content.lower().split():
+        for word in message.content.lower().split():
+            if word == "pox":
+                pox_word_count += 1
+        
+        user_id = str(message.author.id)
+        conn = sqlite3.connect(config['leaderboard_db'])
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT pox_count FROM leaderboard WHERE user_id = ?", (user_id,))
+        result = cursor.fetchone()
+
+        if result:
+            new_count = result[0] + pox_word_count
+            cursor.execute("UPDATE leaderboard SET pox_count = ? WHERE user_id = ?", (new_count,user_id))
+        else:
+            cursor.execute("INSERT INTO leaderboard (user_id, pox_count) VALUES (?, ?)", (user_id, pox_word_count))
+        
+        conn.commit()
+        conn.close()
+
+    if message.content.startswith("pox!"):
+        handled_messages += 1
+        await bot.process_commands(message)
+
+class LLM(commands.Cog, name="AI Responses"):
+    def __init__(self,bot):
+        self.bot = bot
+    
+    @commands.hybrid_command(name="ask", description="Retrieves LLM Response lol")
+    @commands.guild_only()
+    async def ask(self,ctx: commands.Context, *, prompt: str):
+        await llm_response(ctx,prompt)
+    
+    @commands.hybrid_command(name="ai_lockdown", description="Lock AI Response")
+    @commands.guild_only()
+    async def lock(self,ctx):
+        global config
+        if config['ai_lockdown']:
+            await ctx.send("someone already did lockdown me :3")
+            return
+        config['ai_lockdown'] = True
+        await ctx.send("lockdown mode on! :3")
+    
+    @commands.hybrid_command(name="ai_unlockdown", description="Lock AI Response")
+    @commands.guild_only()
+    async def unlock(self,ctx):
+        global config
+        if not config['ai_lockdown']:
+            await ctx.send("am not locked :3")
+            return
+        config['ai_lockdown'] = False
+        await ctx.send("lockdown mode off! :3")
+    
+    @commands.hybrid_command(name="toggle_ai_uwuify", description="Makes AI Response to uwuified")
+    @commands.guild_only()
+    async def uwu(self,ctx):
+        global config
+        config['ai_uwuify'] = not config['ai_uwuify']
+        if config['ai_uwuify']:
+            await ctx.send("hmmm it seems you did uwuify the ai maybe")
+        else:
+            await ctx.send("like it")
+class Fun(commands.Cog):
+    def __init__(self,bot):
+        self.bot = bot
+    @commands.hybrid_command(name="pox",description="Say him 'p0x38 is retroslop >:3'")
+    async def pox(self, ctx: commands.Context):
+        await ctx.send("p0x38 is retroslop >:3")
+
+    @commands.hybrid_command(name="timedate", description="Shows time in bot's time")
+    async def timedate(self, ctx: commands.Context):
+        timec = datetime.now(pytz.timezone("Asia/Tokyo"))
+        await ctx.send(f"I'm on {datetime.strftime(timec, '%Y-%m-%d %H:%M:%S%z')} :3")
+    
+    @commands.hybrid_command(name="is_gay",description="Checks if someone is gay")
+    @app_commands.describe(member="Member to check")
+    async def is_gay(self, ctx: commands.Context,member: discord.Member):
+        randum = int(random.random()*100)
+        dac = stuff.check_map(randum,100)
+        await ctx.send(f"<@{member.id}> is {dac} gay!")
+    
+    @commands.hybrid_command(name="is_femboy",description="Checks if someone is femboy")
+    @app_commands.describe(member="Member to check")
+    async def is_femboy(self, ctx: commands.Context,member: discord.Member):
+        randum = int(random.random()*100)
+        dac = stuff.check_map(randum,100)
+        await ctx.send(f"<@{member.id}> is {dac} femboy!")
+    
+    @commands.hybrid_command(name="is_freaky",description="Checks if someone is freaky")
+    @app_commands.describe(member="Member to check")
+    async def is_freaky(self, ctx: commands.Context,member: discord.Member):
+        randum = int(random.random()*100)
+        dac = stuff.check_map(randum,100)
+        await ctx.send(f"<@{member.id}> is {dac} freaky!")
+    
+    @commands.hybrid_command(name="check_is",description="Checks if someone is it")
+    @app_commands.describe(member="Member to check")
+    async def check_is(self, ctx: commands.Context,member: discord.Member,namet:str):
+        randum = int(random.random()*100)
+        dac = stuff.check_map(randum,100)
+        await ctx.send(f"<@{member.id}> is {dac} {namet}!")
+    
+    @commands.hybrid_command(name="randnum",description="Generates random value between min and max")
+    @app_commands.describe(min="Minimum integer")
+    @app_commands.describe(max="Maximum integer")
+    async def randnum(self, ctx: commands.Context,min = 0, max = 1):
+        await ctx.send(f"Result: {random.uniform(min,max)}")
+    
+    @commands.hybrid_command(name="8ball",description="8ball like that; credit by galaxy_fl3x")
+    @app_commands.describe(ke="Text to check if it is")
+    async def eightball(self, ctx: commands.Context,*,ke):
+        choice = random.choice(data.tyc)
+        await ctx.send(f"{ke}, result: {choice}")
+    
+    @commands.hybrid_command(name="meow",description="Make me say miaw :3")
+    @app_commands.describe(put_face="Enables extra face such as :3")
+    async def meow(self, ctx: commands.Context,put_face:str):
+        add_face = True if put_face.lower() in ("yes", "true") else False
+        arrays = data.meows_with_extraformat
+        for index, string in enumerate(arrays):
+            arrays[index] = stuff.format_extra(string)
+            if add_face:
+                arrays[index] = arrays[index]+" "+random.choice(data.faces)
+        await ctx.send(f"{random.choice(arrays)}")
+    
+    @commands.hybrid_command(name="poxleaderboard",description="Shows leaderboard in server who said pox for many times")
+    async def poxleaderboard(self, ctx: commands.Context):
+        conn = sqlite3.connect(config['leaderboard_db'])
+        cursor = conn.cursor()
+    
+        cursor.execute("SELECT user_id, pox_count FROM leaderboard ORDER BY pox_count DESC LIMIT 32")
+        leaderboard_data = cursor.fetchall()
+        conn.close()
+        desc = ""
+        if len(leaderboard_data) == 0:
+            desc = "No one has said pox yet 3:"
+        else:
+            for i , (id,count) in enumerate(leaderboard_data,1):
+                #user = bot.get_user(int(id))
+                #username = user.display_name if user else f"ID: {id}"
+                desc += f"{i}. <@{id}>: {count} times!\n"
+                #desc += f"{i}. **{username}**: {count} times!\n"
+        
+        desc += "\nData were stored in BOT Server."
+        
+        embed = discord.Embed(
+            title="**Pox Leaderboard**",
+            description=desc,
+            color=0xFFA500
+        )
+    
+        await ctx.send(embed=embed)
+    
+    @commands.hybrid_command(name="ispoxactive",description="Check if pox is active")
+    async def ispoxactive(self, ctx: commands.Context):
+        now = datetime.now(pytz.timezone('Asia/Tokyo'))
+        isWeekday = stuff.is_weekday(now)
+        isFaster = stuff.is_specificweek(now,2) or stuff.is_specificweek(now,4)
+        isInSchool = stuff.is_within_hour(now,7,16) if isWeekday and not isFaster else (stuff.is_within_hour(now,7,15) if isWeekday and isFaster else False)
+        isSleeping = stuff.is_sleeping(now,23,7) if isWeekday else stuff.is_within_hour(now,2,12)
+        status = ""
+        if isInSchool:
+            status = "Pox is in school! :3"
+        elif isSleeping:
+            status = "Pox is sleeping! :3"
+        else:
+            status = "Pox is sometimes active! :3"
+        
+        await ctx.send(f"{status}\nMay the result varies by the time, cuz it is very advanced to do... also this is not accurate.")
+    
+    @commands.hybrid_command(name="nyan_cat",description="Nyan cat :D")
+    async def nyan_cat(self, ctx: commands.Context):
+        try:
+            url = os.path.dirname(__file__)
+            url2 = os.path.join(url,"images/nyancat_big.gif")
+            with open(url2, 'rb') as f:
+                pic = discord.File(f)
+            await ctx.send("THINK FAST, CHUCKLE NUTS!",file=pic)
+        except Exception as e:
+            await ctx.send(f"Error! {e} 3:")
+    
+    @commands.hybrid_command(name="befreaky",description="like a emoji... ahn 🥵")
+    @app_commands.describe(by="A member to being freaky to me")
+    async def freaky(self, ctx: commands.Context, by: discord.Member = None):
+        await ctx.send(f"please stop... <@{by.id if by else ctx.author.id}>... 🥵")
+
+class Manage(commands.Cog):
+    def __init__(self,bot):
+        self.bot = bot
+    @commands.hybrid_command(name="kick",description="Kicks member")
+    @commands.has_permissions(kick_members=True)
+    @app_commands.describe(member="Member to kick")
+    @app_commands.describe(reason="Reason to kick member")
+    async def kick(self, ctx: commands.Context, member: discord.Member, *,reason=None):
+        try:
+            await member.kick(reason=reason if reason else "No reason were provided")
+            await ctx.send(f"{member.name} has been kicked from the server")
+        except Exception as e:
+            logger.error("Error: {e}")
+
+class Utility(commands.Cog):
+    def __init__(self,bot):
+        self.bot = bot
+    @commands.hybrid_command(name="tmessages",description="Shows how much he processed messages")
+    async def tmessages(self, ctx: commands.Context):
+        global handled_messages
+        await ctx.send(f"I have been processed {handled_messages} messages! :3")
+    
+    @commands.hybrid_command(name="info",description="Shows information for the bot")
+    async def info(self, ctx: commands.Context):
+        global session_uuid,handled_messages
+        embed = discord.Embed(title="Info of myself and others stuff :3")
+        datacf = {
+            '(not discord\'s) Session UUID': str(session_uuid),
+            '"discord.py" Version': discord.__version__,
+            'Python Version': "Python "+platform.python_version(),
+            'Platform info': platform.platform(),
+            'Ubuntu Distribution': distro.name() + " " + distro.version(),
+            'Total guilds': len(bot.guilds),
+            'Total Cached Messages': len(bot.cached_messages),
+            'Latency (milliseconds)': round(bot.latency*100000)/100,
+            'Watching Guild': target_channel.guild.name or "Unknown server",
+            'Watching Channel': ("#"+target_channel.name) or "unknown channel",
+            'Guild members': target_channel.guild.member_count,
+            'NSFW?': "Maybe, s****-",
+            'Is it unrelated?': "yeah!!!!",
+            "Status": "Sleeping" if (datetime.now(UTC).timestamp() - last_interaction.timestamp()) >= INACTIVITY_THRESHOLD else "Wake",
+            "Nyan Cat": "https://gist.github.com/aba00c9a1c92d226f68e8ad8ba1e0a40",
+            "Laugh": "bah bah",
+            "Handled messages": handled_messages,
+        }
+        for key, value in datacf.items():
+            logger.debug(f"{key}: {value}")
+            embed.add_field(name=key,value=value,inline=False)
+        
+        await ctx.send(embed=embed)
+
+    @commands.hybrid_command(name="hi",description="replys as hi")
+    async def hi(self, ctx: commands.Context):
+        await ctx.send("Hi")
+    
+    @commands.hybrid_command(name="ping",description="Pings bot for get latency")
+    async def ping(self, ctx: commands.Context):
+        dcfata=[
+            "pong!!! :3",
+            f"Latency: {round(bot.latency*100000)/100}",
+            f"Responded with Shard {bot.shard_id}~ :3",
+            f"Current shard count: {bot.shard_count}",
+        ]
+        await ctx.send("\n".join(dcfata))
+    
+    @commands.hybrid_command(name="say",aliases=["talk","speak","send"],description="Sends a message to everyone that you did")
+    @app_commands.describe(msg="Message to send")
+    async def say(self, ctx: commands.Context, *, msg: str):
+        await ctx.send(msg)
+    
+    @commands.hybrid_command(name="say_censor",aliases=["talk_censor","speak_censor","send_censor"],description="Sends a message to everyone that you did")
+    @app_commands.describe(msg="Message to send")
+    async def say_c(self, ctx: commands.Context, *, msg: str):
+        output = stuff.censor(pf,msg)
+        await ctx.send(msg)
+    
+    @commands.hybrid_command(name="sayuwuify",aliases=["talk_silly","speak_silly","send_silly","saysilly"],description="Sends a message to everyone that you did")
+    @app_commands.describe(msg="Message to send")
+    async def say_u(self, ctx: commands.Context, *, msg: str):
+        await ctx.send(f"{stuff.uwuify(uwu,msg)} :3")
+    
+    @commands.hybrid_command(name="sync_commands",description="syncs command if panic mode")
+    @commands.is_owner()
+    @commands.guild_only()
+    async def sync(self,ctx: commands.Context):
+        if ctx.guild:
+            bot.tree.clear_commands(guild=ctx.guild)
+            await bot.tree.sync(guild=ctx.guild)
+            await ctx.send("Commands have been synced! :3")
+        else:
+            await ctx.send("This command can only be used in a server! 3:")
+    
+    @commands.hybrid_command(name="uptime", description="How long this bot is in f**king session")
+    async def check_uptime(self,ctx: commands.Context):
+        global start_time
+        await ctx.send("me hav been for {} seconds..! >:3".format(stuff.get_formatted_from_seconds(round(time.time() - start_time))))
+
+def save():
+    stuff.save(config)
+
+atexit.register(save)
+
+if __name__ == "__main__":
+    if not bot_token:
+        exit()
+    else:
+        try:
+            bot.run(bot_token)
+        except KeyboardInterrupt:
+            print("Shutting down...")
+            pass
+        except Exception as e:
+            print(f"An unexcepted error occured: {e}")
+        finally:
+            print("Bot Closed")
