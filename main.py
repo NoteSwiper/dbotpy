@@ -1,3 +1,7 @@
+"""
+Author: NoteSwiper
+"""
+
 import platform
 import sys
 import asyncio
@@ -579,7 +583,7 @@ class Utility(commands.Cog):
     @commands.hybrid_command(name="uptime", description="How long this bot is in f**king session")
     async def check_uptime(self,ctx: commands.Context):
         global start_time
-        await ctx.send("me hav been for {} seconds..! >:3".format(stuff.get_formatted_from_seconds(round(time.time() - start_time))))
+        await ctx.send("me hav been for {}..! >:3".format(stuff.get_formatted_from_seconds(round(time.time() - start_time))))
 
 def save():
     stuff.save(config)

@@ -51,3 +51,11 @@ I do not own the images or anything that is not made by me.
 ## Contribute
 
 no need to contribute, cuz am single developer rn
+
+# Attribution
+
+minimal attribution if you want:
+
+```
+ripped from noteswiper
+```

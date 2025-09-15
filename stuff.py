@@ -216,4 +216,4 @@ def get_formatted_from_seconds(seconds):
     seconds %= 3600
     minute = seconds // 60
     seconds %= 60
-    return f"{hour}:{minute}:{seconds}"
+    return f"{hour} hours {minute} minutes {seconds} seconds"
