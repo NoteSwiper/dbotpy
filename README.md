@@ -2,6 +2,12 @@
 
 just an my bot's source code lolol
 
+> [!IMPORTANT]
+>
+> This bot has a logger for every guilds & channels.
+> It was used for remote discord bot sending, and finding malicious posts.
+> Do NOT use the logger for malicious thing.
+
 ## Requirements
 
 You need to install these:
