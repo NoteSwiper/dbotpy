@@ -53,15 +53,14 @@ stuff.set_if_not_exists(config,"last_channel",None)
 stuff.set_if_not_exists(config,"last_guild",None)
 stuff.set_if_not_exists(config,"global_messages",None)
 stuff.set_if_not_exists(config,"last_activity",":3")
-stuff.set_if_not_exists(config,"toggles",{
-    'uwuify': False,
-    'base64': False,
-    'muffle': False,
-    'censor': False,
-    'shout': False,
-    'repeat': False,
-    'send': False,
-})
+stuff.set_if_not_exists(config,'uwuify', False)
+stuff.set_if_not_exists(config,'base64', False)
+stuff.set_if_not_exists(config,'muffle', False)
+stuff.set_if_not_exists(config,'censor', False)
+stuff.set_if_not_exists(config,'shout', False)
+stuff.set_if_not_exists(config,'repeat', False)
+stuff.set_if_not_exists(config,'send', False)
+stuff.set_if_not_exists(config,'meow', False)
 stuff.set_if_not_exists(config,"ai_lockdown",False)
 stuff.set_if_not_exists(config,"ai_uwuify", False)
 
@@ -133,6 +132,7 @@ async def on_ready():
     await bot.add_cog(Manage(bot))
     await bot.add_cog(Utility(bot))
     await bot.add_cog(LLM(bot))
+    await bot.add_cog(Converters(bot))
     await tree.sync()
     check_inactivity.start()
     bot.loop.create_task(read())
@@ -237,25 +237,27 @@ async def read():
                     logger.info(f"ACTIVITY: {" ".join(args[1:])}")
                     await bot.change_presence(activity=discord.CustomActivity(name=" ".join(args[1:])))
                 case "toggle:":
-                    await stuff.change_toggles(config['toggles'],args[1])
+                    await stuff.change_toggles(config,args[1])
                 case _:
                     if target_channel and message_content:
                         try:
                             censored = message_content
 
                             try:
-                                if config['toggles']['repeat']:
+                                if config['repeat']:
                                     censored = stuff.format_extra(censored)
-                                if config['toggles']['uwuify']:
+                                if config['uwuify']:
                                     censored = stuff.uwuify(uwu,censored)
-                                if config['toggles']['muffle']:
+                                if config['muffle']:
                                     censored = stuff.muffle(censored)
-                                if config['toggles']['base64']:
+                                if config['base64']:
                                     censored = base64.b64encode(censored.encode()).decode()
-                                if config['toggles']['censor']:
+                                if config['censor']:
                                     censored = stuff.censor(pf,censored)
-                                if config['toggles']['shout']:
+                                if config['shout']:
                                     censored = f"# **{censored.replace("*",r"\*")}**"
+                                if config['meow']:
+                                    censored = stuff.meow_phrase_weighted(censored)
                                 last_interaction = datetime.now(UTC)
 
                                 if bot.activity and bot.activity.name == "zzz...":
@@ -487,6 +489,18 @@ class Fun(commands.Cog):
     @app_commands.describe(by="A member to being freaky to me")
     async def freaky(self, ctx: commands.Context, by: discord.Member = None):
         await ctx.send(f"please stop... <@{by.id if by else ctx.author.id}>... 🥵")
+
+class Converters(commands.Cog):
+    def __init__(self,bot):
+        self.bot = bot
+    
+    @commands.hybrid_command(name="meowify",description="makes text to MEOW MEOW :'3")
+    @app_commands.describe(text="Text to be meowified")
+    async def meow(self, ctx: commands.Context, text: str):
+        try:
+            await ctx.reply(stuff.meow_phrase_weighted(text))
+        except Exception as e:
+            await ctx.reply(f"Error occured! {e}")
 
 class Manage(commands.Cog):
     def __init__(self,bot):

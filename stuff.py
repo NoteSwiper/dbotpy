@@ -9,6 +9,7 @@ from uwuipy import Uwuipy
 import logging
 import logging.handlers
 import dotenv
+import re
 
 import data
 
@@ -31,12 +32,23 @@ logger.addHandler(handler)
 def get_bot_token():
     return os.getenv('TOKEN')
 
+def _find_key_recursive(config: dict,key) -> bool:
+    if key in config:
+        logging.debug(f"Found key '{key}' at a nested level.")
+        return True
+    
+    for value in config.values():
+        if isinstance(value, dict):
+            if _find_key_recursive(value,key):
+                return True
+    
+    return False
+
 def set_if_not_exists(config: dict, key, value):
     try:
-        for k in config.keys():
+        for k,v in config.items():
             logger.debug(f"ArrayKey: {k}")
             if k == key:
-                logger.debug(f"Found matching: {k}")
                 return
         config[key] = value
     except Exception as e:
@@ -62,23 +74,13 @@ async def isInt(s):
         logger.debug("Yes sir! :3")
         return True
 
-async def change_toggles(config:dict, key: str):
-    if not key:
-        logger.warning("Not provided 3:")
-        print("Not provided 3:")
-    
-    
-    for k in config.keys():
-        print(k)
-        logger.debug(f"Searching {k} is matching with name {key}...")
-        if k == key:
-            logger.debug(f"Matching found: {k} {key} :3")
-            config[k] = not config[k]
-            print(f"Changed {k} to {config[k]} :3")
-            return
-    
-    print(f"{key} not found from config 3:")
-    logger.debug(f"{key} not found 3:")
+async def change_toggles(config,key):
+    if not key or not config:
+        logger.error(f"{key} not found! 3:")
+        return
+    config[key] = not config[key]
+    logger.info(f"Set {key} to {config[key]}! :3")
+    print("Found")
     return
 
 def censor(pf: ProfanityFilter,text: str):
@@ -217,3 +219,52 @@ def get_formatted_from_seconds(seconds):
     minute = seconds // 60
     seconds %= 60
     return f"{hour} hours {minute} minutes {seconds} seconds"
+
+def meow_clean_phrase(phrase):
+    return ''.join(char for char in phrase if char.isalpha() or char.isspace())
+
+def to_meow_weighted(word):
+    length = len(word)
+    if not length:
+        return ""
+    
+    if length < 4:
+        return "meow"
+    
+    weights = {'m':25,'e':33,'o':50,'w':28}
+    total_weight = sum(weights.values())
+    
+    mc = round(length * (weights['m'] / total_weight))
+    ec = round(length * (weights['e'] / total_weight))
+    oc = round(length * (weights['o'] / total_weight))
+    wc = round(length * (weights['w'] / total_weight))
+    
+    current_length = mc + ec + oc + wc
+    diff = length - current_length
+    
+    if diff > 0:
+        oc += diff//2
+        ec += diff - (diff//2)
+    elif diff < 0:
+        oc -= abs(diff//2)
+        ec -= abs(diff) - abs(diff//2)
+    
+    return ("m"*mc)+("e"*ec)+("o"*oc)+("w"*wc)
+
+def meow_phrase_weighted(phrase):
+    final_phrase = ""
+    current_word = ""
+    
+    for char in phrase:
+        if char.isalpha():
+            current_word += char
+        else:
+            if current_word:
+                final_phrase += to_meow_weighted(current_word)
+                current_word = ""
+            final_phrase += char
+    
+    if current_word:
+        final_phrase += to_meow_weighted(current_word)
+    
+    return final_phrase
