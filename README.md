@@ -1,0 +1,47 @@
+# dbotpy
+
+just an my bot's source code lolol
+
+## Requirements
+
+You need to install these:
+
+* Python 3.12 (tested & main)
+* hmmmmm
+* uh
+* pip..?
+* uh am losing sanity
+
+also package requirements are stored in `requirements.txt`.
+
+install packages with doing this:
+
+```sh
+$ pip install -r requirements.txt
+```
+
+## Usage
+
+create or edit .env:
+
+```ini
+TOKEN=<BOT_TOKEN>
+```
+
+just do this:
+
+```sh
+$ python main.py
+```
+
+> [!warning]
+> 
+> I'm not even responsible, if you MESSED IT UP.
+
+## Copyright
+
+I do not own the images or anything that is not made by me.
+
+## Contribute
+
+no need to contribute, cuz am single developer rn
