@@ -532,7 +532,7 @@ class Senders(commands.Cog):
     @app_commands.describe(text="Text to send")
     async def dm_one(self, ctx: commands.Context, member: discord.Member, *, text: str):
         try:
-            await member.send(f"{text}\bSent by {ctx.author.name}!")
+            await member.send(f"{text}\n\nSent by {ctx.author.name}!")
             await ctx.reply(f"DM were sent!", ephemeral=True)
         except Exception as e:
             await ctx.reply(f"Failed to send DM: {e}", ephemeral=True)
