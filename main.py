@@ -122,11 +122,14 @@ last_channel_id = get_lastchannel_id() or target_id
 @bot.event
 async def on_ready():
     global target_channel, target_id,last_channel_id
+    
     logger.debug(f"Logged in as {bot.user.name if bot.user else "Unknown"}!")
     target_channel = bot.get_channel(last_channel_id)
+
     await bot.change_presence(activity=discord.CustomActivity(name=config['last_activity'] if config['last_activity'] else "meow :)"))
-    logger.info(f"Current guild: {target_channel.guild.name if target_channel and target_channel.guild else "Unknown guild"}") # type: ignore
-    logger.info(f"Current channel: #{target_channel.name if target_channel else "Unknown channel"}") # type: ignore
+    logger.info(f"Current guild: {target_channel.guild.name if target_channel and target_channel.guild else "Unknown guild"}")
+    logger.info(f"Current channel: #{target_channel.name if target_channel else "Unknown channel"}")
+
     stuff.setup_database(config['leaderboard_db'])
     await bot.add_cog(Fun(bot))
     await bot.add_cog(Manage(bot))
@@ -134,7 +137,9 @@ async def on_ready():
     await bot.add_cog(LLM(bot))
     await bot.add_cog(Converters(bot))
     await bot.add_cog(Senders(bot))
+
     await tree.sync()
+
     check_inactivity.start()
     bot.loop.create_task(read())
 
@@ -161,28 +166,11 @@ async def llm_response(ctx, prompt: str, bypass_check: bool = False):
         await ctx.send("i don't like bad woords!!! 3:<")
         return
     
-    history2 = [
-        {"role": "system", "content": "Make sure to add :3 faces in response"}
-    ]
-
-    #conversation_history.append({
-    #    "channel": ctx.channel.id,
-    #    "message": ctx.message.content
-    #})
-
-
-    
-    #for item in conversation_history:
-    #    if ctx.channel.id == item['channel']:
-    #        history2.append({'role': 'user', 'content': item['message']})
-    
     async with ctx.typing():
         try:
             stream = ollama.chat(
                 model="gemma3:1b",
-                #messages=history2,
                 messages=[
-                    #{'role': 'system', 'content': "Make sure to short your response. do not include any of urls or sensitive words or even extra words."},
                     {'role': 'system', 'content': "Make sure to short your response :3"},
                     {'role': 'user', 'content': prompt}
                 ],
@@ -232,7 +220,7 @@ async def read():
                             save_lastchannel_id(channelid)
                             last_channel_id = channelid
                             logger.info(f"BOT: {message_content}")
-                            print(f"Channel changed to {target_channel.guild.name}'s {target_channel.name}! :3") # type: ignore
+                            print(f"Channel changed to {target_channel.guild.name}'s {target_channel.name}! :3")
                             #await target_channel.send(uwu.uwuify("Hello from some other nan channel in a row! :3"))
                 case "activity:":
                     logger.info(f"ACTIVITY: {" ".join(args[1:])}")
@@ -276,20 +264,27 @@ async def read():
 @bot.event
 async def on_message(message: discord.Message):
     global last_interaction,handled_messages
-    #logger.info(f"[{message.guild.id}] {message.author.global_name} (@{message.author.name}): {message.content}")
+    if message.channel == discord.DMChannel:
+        return
+    
     handled_messages += 1
     temp = f"{message.author.display_name} ({message.author.name})" if (message.author.display_name and message.author.display_name != message.author.name) else f"@{message.author.name}"
     temp2 = []
+    
     if message.author.system:
         temp2.append("[SYS]")
+
     if message.author.bot:
         temp2.append("[BOT]")
+
     if message.channel == target_channel:
         logger.info(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{"\n(Contains attachment)" if message.attachments else ""}")
     else:
         logger.debug(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{"\n(Contains attachment)" if message.attachments else ""}")
+    
     if message.author == bot.user:
         return
+    
     if message.mention_everyone:
         return
     
@@ -297,6 +292,7 @@ async def on_message(message: discord.Message):
         prompt = message.content.replace(f'<@{bot.user.id}>','').strip()
         if not prompt:
             return
+        
         if message.content.startswith("pox!"):
             await bot.process_commands(message)
         else:
@@ -329,6 +325,10 @@ async def on_message(message: discord.Message):
     if message.content.startswith("pox!"):
         handled_messages += 1
         await bot.process_commands(message)
+
+@bot.event
+async def on_command_error(ctx: commands.Context, e: commands.CommandError):
+    await ctx.send(f"BLARGGHHH- {e}- ughhhh... 3:")
 
 class LLM(commands.Cog, name="AI Responses"):
     def __init__(self,bot):
@@ -444,10 +444,7 @@ class Fun(commands.Cog):
             desc = "No one has said pox yet 3:"
         else:
             for i , (id,count) in enumerate(leaderboard_data,1):
-                #user = bot.get_user(int(id))
-                #username = user.display_name if user else f"ID: {id}"
                 desc += f"{i}. <@{id}>: {count} times!\n"
-                #desc += f"{i}. **{username}**: {count} times!\n"
         
         desc += "\nData were stored in BOT Server."
         
@@ -489,7 +486,7 @@ class Fun(commands.Cog):
     
     @commands.hybrid_command(name="befreaky",description="like a emoji... ahn 🥵")
     @app_commands.describe(by="A member to being freaky to me")
-    async def freaky(self, ctx: commands.Context, by: discord.Member = None):
+    async def freaky(self, ctx: commands.Context, by: discord.Member|None = None):
         await ctx.send(f"please stop... <@{by.id if by else ctx.author.id}>... 🥵")
     
     @commands.hybrid_command(name="pox_schooldate",description="Check if owner of the bot is in school")
@@ -521,6 +518,34 @@ class Manage(commands.Cog):
             await ctx.send(f"{member.name} has been kicked from the server")
         except Exception as e:
             logger.error("Error: {e}")
+    
+    @commands.hybrid_command(name="warn", description="Warns member")
+    @commands.has_permissions(moderate_members=True)
+    @app_commands.describe(member="Member to warn")
+    @app_commands.describe(reason="Reason to warn")
+    async def warn(self, ctx: commands.Context, member: discord.Member, *, reason: str):
+        try:
+            await member.send(f"You're warned by {ctx.author.name}!\n\nReason: `{reason}`")
+            await ctx.reply(f"Warned <@{member.id}>!", ephemeral=True)
+        except Exception as e:
+            await ctx.reply(f"Failed to warn: {e}! 3:")
+            logger.error(f"Exception occured: {e}")
+    
+    @commands.hybrid_command(name="timeout", description="Warns member")
+    @commands.has_permissions(moderate_members=True)
+    @app_commands.describe(member="Member to time-out")
+    @app_commands.describe(reason="Reason to time-out")
+    @app_commands.describe(length="Length of time-out (minutes)")
+    async def timeout(self, ctx: commands.Context, member: discord.Member, reason: str = '', length: int = 1):
+        await member.timeout(timedelta(minutes=length), reason=f"You're timed out! \"{reason if reason else "No reason provided from source"}\", Requested by {ctx.author.name}")
+        await ctx.reply(f"Timed out {member.mention} for {length} minutes.")
+    
+    @commands.hybrid_command(name="untimeout", description="Un-timeout member")
+    @commands.has_permissions(moderate_members=True)
+    @app_commands.describe(member="Member to remove timeout")
+    async def untimeout(self, ctx: commands.Context, member: discord.Member):
+        await member.edit(timed_out_until=None)
+        await ctx.reply(f"Took the timeout for {member.mention}")
 
 class Senders(commands.Cog):
     def __init__(self,bot):
