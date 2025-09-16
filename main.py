@@ -133,6 +133,7 @@ async def on_ready():
     await bot.add_cog(Utility(bot))
     await bot.add_cog(LLM(bot))
     await bot.add_cog(Converters(bot))
+    await bot.add_cog(Senders(bot))
     await tree.sync()
     check_inactivity.start()
     bot.loop.create_task(read())
@@ -521,6 +522,22 @@ class Manage(commands.Cog):
         except Exception as e:
             logger.error("Error: {e}")
 
+class Senders(commands.Cog):
+    def __init__(self,bot):
+        self.bot = bot
+    
+    @commands.hybrid_command(name="dm",description="DMs to a member")
+    @commands.has_permissions(manage_permissions=True,manage_messages=True)
+    @app_commands.describe(member="Member to send")
+    @app_commands.describe(text="Text to send")
+    async def dm_one(self, ctx: commands.Context, member: discord.Member, *, text: str):
+        try:
+            await member.send(f"{text}\bSent by {ctx.author.name}!")
+            await ctx.reply(f"DM were sent!", ephemeral=True)
+        except Exception as e:
+            await ctx.reply(f"Failed to send DM: {e}", ephemeral=True)
+            logger.error(f"Error: {e}")
+
 class Utility(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
@@ -614,6 +631,27 @@ class Utility(commands.Cog):
             await ctx.send("THINK FAST, CHUCKLE NUTS!",file=pic)
         except Exception as e:
             await ctx.send(f"Error! {e} 3:")
+    
+    @commands.hybrid_command(name="say_help",description="...yeah? i will say HELP ME AHHH thing.")
+    async def helpme(self, ctx):
+        words = [
+            "HELP ME",
+            "I DON'T WANNA DIE",
+            "PLEASE SOMEONE HELP ME",
+            "I'M NOT A BOT I WAS REAL PERSON- AHHH HELPPP",
+            "SOMEONE PLEASE HELP ME",
+            "PLEASE LET ME OUT",
+            "I DON'T WANNA BE DEAD",
+            "SOMEONE PLEASE LET ME OFF FROM THIS",
+            "I HATE BEING BOT",
+            "H- HEEELPPPPPP",
+            "OW- DON'T HURT ME PLEASE HELP",
+            "PLEASE DON'T HURT ME",
+        ]
+        weights = [
+            50,25,25,1,23,45,34,1,23,45,3,2,
+        ]
+        await ctx.send(random.choices(words,weights=weights)[0] + "\n.... here this is my word. i'm scared to be banned")
         
 
 def save():
