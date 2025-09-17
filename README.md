@@ -1,5 +1,9 @@
 # dbotpy
 
+> TL;DR
+>
+> an 
+
 just an my bot's source code lolol
 
 > [!IMPORTANT]

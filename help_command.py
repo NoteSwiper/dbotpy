@@ -1,19 +1,62 @@
-import discord
+import logging
+import logging.handlers
+
+from typing import Mapping, Optional
 from discord.ext import commands
+import discord
+
+import stuff
+
+stuff.create_dir_if_not_exists("./logs")
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = logging.handlers.RotatingFileHandler(
+    filename="logs/help_command.log",
+    encoding='utf-8',
+    maxBytes=32*1024*1024,
+    backupCount=128,
+)
+dt_fmt = '%Y-%m-%d %H:%M:%S'
+formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 class MyHelpCommand(commands.HelpCommand):
-    async def send_bot_help(self, mapping):
-        embed = discord.Embed(title="Bot helps :3", description="Here's my commands :3", color=discord.Color.blue())
+    
+    def __init__(self):
+        super().__init__(
+            show_hidden=False,
+            command_attrs={"brief": "Shows help"}
+        )
+    
+    async def send_bot_help(self, mapping: Mapping[Optional[commands.Cog], list[commands.Command]]):
+        e = discord.Embed(
+            title="Help",
+            description="Lists of commands! :3"
+        )
+        
         for cog, cmds in mapping.items():
-            if cmds:
-                name = cog.qualified_name if cog else "No cat :3"
-                command_list = [f"`{command.name}`" for command in cmds]
-                embed.add_field(
-                    name=name,
-                    value=", ".join(command_list),
-                    inline=False
-                )
-        await self.get_destination().send(embed=embed)
+            temp1 = ""
+            cog_name = cog.qualified_name if cog else "Uncategorized"
+            for command in cmds:
+                c_name = command.name
+                c_desc = command.description or "No description provided"
+                
+                temp1 = temp1 + f"\n`{c_name}` - {c_desc}"
+            e.add_field(
+                name=f"Category: {cog_name} :3",
+                value=temp1
+            )
+        
+        channel = self.get_destination()
+        
+        if channel:
+            await channel.send(embed=e)
+            logger.info("Sent help command!")
+        else:
+            logger.error("Destination channel not found. ignoring help output...")
     
     async def send_cog_help(self, cog):
         embed = discord.Embed(

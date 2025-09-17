@@ -127,9 +127,13 @@ async def on_ready():
     target_channel = bot.get_channel(last_channel_id)
 
     await bot.change_presence(activity=discord.CustomActivity(name=config['last_activity'] if config['last_activity'] else "meow :)"))
-    logger.info(f"Current guild: {target_channel.guild.name if target_channel and target_channel.guild else "Unknown guild"}")
-    logger.info(f"Current channel: #{target_channel.name if target_channel else "Unknown channel"}")
-
+    if isinstance(target_channel, discord.abc.GuildChannel):
+        logger.info(f"Current guild: {target_channel.guild.name if target_channel and target_channel.guild else "Unknown guild"}")
+        logger.info(f"Current channel: #{target_channel.name if target_channel else "Unknown channel"}")
+    elif isinstance(target_channel, discord.abc.PrivateChannel):
+        logger.info("Current guild: None")
+        logger.info("Current channel: Private channel")
+    
     stuff.setup_database(config['leaderboard_db'])
     await bot.add_cog(Fun(bot))
     await bot.add_cog(Manage(bot))
@@ -137,6 +141,7 @@ async def on_ready():
     await bot.add_cog(LLM(bot))
     await bot.add_cog(Converters(bot))
     await bot.add_cog(Senders(bot))
+    await bot.add_cog(Ssoa9cu2x8(bot))
 
     await tree.sync()
 
@@ -211,23 +216,31 @@ async def read():
                     print("3:")
                     logger.info("3:")
                     return
+                
                 case "channel:" :
                     if await stuff.isInt(args[1]):
                         channelid = int(args[1])
                         channel_temp = bot.get_channel(channelid)
-                        if channel_temp:
+                        if channel_temp and isinstance(channel_temp,discord.abc.GuildChannel):
                             target_channel = channel_temp
                             save_lastchannel_id(channelid)
                             last_channel_id = channelid
                             logger.info(f"BOT: {message_content}")
                             print(f"Channel changed to {target_channel.guild.name}'s {target_channel.name}! :3")
                             #await target_channel.send(uwu.uwuify("Hello from some other nan channel in a row! :3"))
+                        elif channel_temp:
+                            print("You cannot go to Private channel or Threads!!! 3:<")
+                        else:
+                            print(f"Channel {channelid} not found from my view! 3:")
+                    
                 case "activity:":
                     logger.info(f"ACTIVITY: {" ".join(args[1:])}")
                     await bot.change_presence(activity=discord.CustomActivity(name=" ".join(args[1:])))
+                
                 case "toggle:":
                     if args[1]:
                         await stuff.change_toggles(config,args[1])
+                
                 case _:
                     if target_channel and message_content:
                         try:
@@ -236,30 +249,41 @@ async def read():
                             try:
                                 if config['repeat']:
                                     censored = stuff.format_extra(censored)
+                                
                                 if config['uwuify']:
                                     censored = stuff.uwuify(uwu,censored)
+                                
                                 if config['muffle']:
                                     censored = stuff.muffle(censored)
+                                
                                 if config['base64']:
                                     censored = base64.b64encode(censored.encode()).decode()
+                                
                                 if config['censor']:
                                     censored = stuff.censor(pf,censored)
+                                
                                 if config['shout']:
-                                    censored = f"# **{censored.replace("*",r"\*")}**"
+                                    if censored:
+                                        censored = f"# **{censored.replace("*",r"\*")}**"
+                                
                                 if config['meow']:
                                     censored = stuff.meow_phrase_weighted(censored)
+
                                 last_interaction = datetime.now(UTC)
 
                                 if bot.activity and bot.activity.name == "zzz...":
                                     await bot.change_presence(activity=discord.CustomActivity(name="O_O"))
+                                
                                 logger.info(f"BOT: {censored}")
-                                await target_channel.send(censored)
+                                
+                                if isinstance(target_channel, discord.abc.GuildChannel) and not isinstance(target_channel, (discord.ForumChannel, discord.CategoryChannel)):
+                                    await target_channel.send(censored)
                             except Exception as e:
-                                await target_channel.send(f"Failed to process message from bot. {e}")
+                                logger.error(f"Failed to send message: {e} 3:")
                         except Exception as e:
-                            await target_channel.send(f"{e} 3:")
+                            logger.error(f"Unknown error occured: {e} 3:")
         else:
-            print("Channel not connected by unknown reason.")
+            print("Message not provided.")
 
 @bot.event
 async def on_message(message: discord.Message):
@@ -276,11 +300,20 @@ async def on_message(message: discord.Message):
 
     if message.author.bot:
         temp2.append("[BOT]")
+    
+    if message.type == discord.MessageType.reply:
+        temp2.append("[REPLY]")
 
     if message.channel == target_channel:
-        logger.info(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{"\n(Contains attachment)" if message.attachments else ""}")
+        if isinstance(message.channel, discord.abc.GuildChannel):
+            logger.info(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{[item.filename for item in message.attachments] if message.attachments else ""}")
+        else:
+            logger.debug(f"[Private] {temp}{" ".join(temp2)}: {message.content}")
     else:
-        logger.debug(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{"\n(Contains attachment)" if message.attachments else ""}")
+        if isinstance(message.channel, discord.abc.GuildChannel):
+            logger.info(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{[item.filename for item in message.attachments] if message.attachments else ""}")
+        else:
+            logger.debug(f"[Private] {temp}{" ".join(temp2)}: {message.content}")
     
     if message.author == bot.user:
         return
@@ -288,15 +321,18 @@ async def on_message(message: discord.Message):
     if message.mention_everyone:
         return
     
-    if bot.user.mentioned_in(message) == True or bot.user in message.mentions:
-        prompt = message.content.replace(f'<@{bot.user.id}>','').strip()
-        if not prompt:
-            return
-        
-        if message.content.startswith("pox!"):
-            await bot.process_commands(message)
-        else:
-            await message.reply(prompt)
+    if bot.user:
+        if bot.user.mentioned_in(message) == True or bot.user in message.mentions:
+            prompt = message.content.replace(f'<@{bot.user.id}>','').strip()
+            if not prompt:
+                return
+
+            if message.content.startswith("pox!"):
+                await bot.process_commands(message)
+            else:
+                await message.reply(prompt)
+    else:
+        logger.error(f"bot.user not found.")
     
     pox_word_count = 0
     separated_words = message.content.split(" ")
@@ -346,6 +382,7 @@ class LLM(commands.Cog, name="AI Responses"):
         if config['ai_lockdown']:
             await ctx.send("someone already did lockdown me :3")
             return
+        
         config['ai_lockdown'] = True
         await ctx.send("lockdown mode on! :3")
     
@@ -356,6 +393,7 @@ class LLM(commands.Cog, name="AI Responses"):
         if not config['ai_lockdown']:
             await ctx.send("am not locked :3")
             return
+        
         config['ai_lockdown'] = False
         await ctx.send("lockdown mode off! :3")
     
@@ -364,6 +402,7 @@ class LLM(commands.Cog, name="AI Responses"):
     async def uwu(self,ctx):
         global config
         config['ai_uwuify'] = not config['ai_uwuify']
+        
         if config['ai_uwuify']:
             await ctx.send("hmmm it seems you did uwuify the ai maybe")
         else:
@@ -378,6 +417,7 @@ class Fun(commands.Cog):
     @commands.hybrid_command(name="timedate", description="Shows time in bot's time")
     async def timedate(self, ctx: commands.Context):
         timec = datetime.now(pytz.timezone("Asia/Tokyo"))
+        
         await ctx.send(f"I'm on {datetime.strftime(timec, '%Y-%m-%d %H:%M:%S%z')} :3")
     
     @commands.hybrid_command(name="is_gay",description="Checks if someone is gay")
@@ -385,6 +425,7 @@ class Fun(commands.Cog):
     async def is_gay(self, ctx: commands.Context,member: discord.Member):
         randum = int(random.random()*100)
         dac = stuff.check_map(randum,100)
+        
         await ctx.send(f"<@{member.id}> is {dac} gay!")
     
     @commands.hybrid_command(name="is_femboy",description="Checks if someone is femboy")
@@ -392,6 +433,7 @@ class Fun(commands.Cog):
     async def is_femboy(self, ctx: commands.Context,member: discord.Member):
         randum = int(random.random()*100)
         dac = stuff.check_map(randum,100)
+        
         await ctx.send(f"<@{member.id}> is {dac} femboy!")
     
     @commands.hybrid_command(name="is_freaky",description="Checks if someone is freaky")
@@ -399,6 +441,7 @@ class Fun(commands.Cog):
     async def is_freaky(self, ctx: commands.Context,member: discord.Member):
         randum = int(random.random()*100)
         dac = stuff.check_map(randum,100)
+        
         await ctx.send(f"<@{member.id}> is {dac} freaky!")
     
     @commands.hybrid_command(name="check_is",description="Checks if someone is it")
@@ -406,6 +449,7 @@ class Fun(commands.Cog):
     async def check_is(self, ctx: commands.Context,member: discord.Member,namet:str):
         randum = int(random.random()*100)
         dac = stuff.check_map(randum,100)
+        
         await ctx.send(f"<@{member.id}> is {dac} {namet}!")
     
     @commands.hybrid_command(name="randnum",description="Generates random value between min and max")
@@ -418,6 +462,7 @@ class Fun(commands.Cog):
     @app_commands.describe(ke="Text to check if it is")
     async def eightball(self, ctx: commands.Context,*,ke):
         choice = random.choice(data.tyc)
+        
         await ctx.send(f"{ke}, result: {choice}")
     
     @commands.hybrid_command(name="meow",description="Make me say miaw :3")
@@ -425,10 +470,12 @@ class Fun(commands.Cog):
     async def meow(self, ctx: commands.Context,put_face:str):
         add_face = True if put_face.lower() in ("yes", "true") else False
         arrays = data.meows_with_extraformat
+        
         for index, string in enumerate(arrays):
             arrays[index] = stuff.format_extra(string)
             if add_face:
                 arrays[index] = arrays[index]+" "+random.choice(data.faces)
+        
         await ctx.send(f"{random.choice(arrays)}")
     
     @commands.hybrid_command(name="poxleaderboard",description="Shows leaderboard in server who said pox for many times")
@@ -464,6 +511,7 @@ class Fun(commands.Cog):
         isInSchool = stuff.is_within_hour(now,7,16) if isWeekday and not isFaster else (stuff.is_within_hour(now,7,15) if isWeekday and isFaster else False)
         isSleeping = stuff.is_sleeping(now,23,7) if isWeekday else stuff.is_within_hour(now,2,12)
         status = ""
+        
         if isInSchool:
             status = "Pox is in school! :3"
         elif isSleeping:
@@ -478,8 +526,10 @@ class Fun(commands.Cog):
         try:
             url = os.path.dirname(__file__)
             url2 = os.path.join(url,"images/nyancat_big.gif")
+            
             with open(url2, 'rb') as f:
                 pic = discord.File(f)
+            
             await ctx.send("THINK FAST, CHUCKLE NUTS!",file=pic)
         except Exception as e:
             await ctx.send(f"Error! {e} 3:")
@@ -487,11 +537,57 @@ class Fun(commands.Cog):
     @commands.hybrid_command(name="befreaky",description="like a emoji... ahn 🥵")
     @app_commands.describe(by="A member to being freaky to me")
     async def freaky(self, ctx: commands.Context, by: discord.Member|None = None):
-        await ctx.send(f"please stop... <@{by.id if by else ctx.author.id}>... 🥵")
+        titl = ""
+        desc = "...EEWWWWWW!!!!!1!1 3:"
+        
+        titl = stuff.format_extra(random.choice(data.very_freaky)).format(f"<@{by.id if by else ctx.author.id}>")
+        
+        embed = discord.Embed(title=titl, description=desc)
+        await ctx.send(embed=embed)
     
     @commands.hybrid_command(name="pox_schooldate",description="Check if owner of the bot is in school")
     async def check_schooldate(self,ctx):
         await ctx.send(f"Pox is {"in school day 3:" if stuff.is_weekday(datetime.now(pytz.timezone("Asia/Tokyo"))) else "not in school day! >:D"}")
+    
+    @commands.hybrid_command(name="emoticon",description="Sends random emoticon")
+    async def emoticon(self,ctx):
+        await ctx.send(random.choice(data.emoticons))
+
+class Ssoa9cu2x8(commands.Cog):
+    def __init__(self,bot):
+        self.bot = bot
+    
+    @commands.hybrid_command(name="t0001",description="...")
+    @app_commands.describe(id="...")
+    async def t0001(self, ctx: commands.Context, id: int = 0):
+        svp = ""
+        desc = ""
+        
+        out_of_range = (id > len(data.msg_ssoa))
+        
+        if out_of_range:
+
+            # swear the maker of the bot & source code   
+            # i am stupid and mean-less creature ever has
+            # it will not say swear at you, it only for m
+            # ebecause i always wanted to be sweared by a
+            # nyone but nobody hates me so i had to make 
+            # this please hate me please hate me please h
+            # ate me please hate me please hate me please
+            # hate me please hate me please hate me pleas
+            # e hate me please hate me please hate me ple
+            # ase hate me please hate me please hate me p
+            # lease hate me please hate me please hate me
+            
+            if ctx.author.id == 1321324137850994758:
+                desc = "pox is dumb and idiot"
+            svp = random.choice(data.err_ssoa)
+        else:
+            svp = data.msg_ssoa[id]
+            desc = "Don't take my word. it's not directed at you"
+        embed = discord.Embed(title=svp,description=desc)
+        
+        await ctx.reply(embed=embed)
 
 class Converters(commands.Cog):
     def __init__(self,bot):
@@ -573,7 +669,7 @@ class Utility(commands.Cog):
     
     @commands.hybrid_command(name="info",description="Shows information for the bot")
     async def info(self, ctx: commands.Context):
-        global session_uuid,handled_messages
+        global session_uuid,handled_messages,target_channel
         embed = discord.Embed(title="Info of myself and others stuff :3")
         datacf = {
             '(not discord\'s) Session UUID': str(session_uuid),
@@ -584,9 +680,9 @@ class Utility(commands.Cog):
             'Total guilds': len(bot.guilds),
             'Total Cached Messages': len(bot.cached_messages),
             'Latency (milliseconds)': round(bot.latency*100000)/100,
-            'Watching Guild': target_channel.guild.name or "Unknown server",
-            'Watching Channel': ("#"+target_channel.name) or "unknown channel",
-            'Guild members': target_channel.guild.member_count,
+            'Watching Guild': "Unknown",
+            'Watching Channel': "Unknown",
+            '(your) Guild members': "Unknown",
             'NSFW?': "Maybe, s****-",
             'Is it unrelated?': "yeah!!!!",
             "Status": "Sleeping" if (datetime.now(UTC).timestamp() - last_interaction.timestamp()) >= INACTIVITY_THRESHOLD else "Wake",
@@ -594,6 +690,18 @@ class Utility(commands.Cog):
             "Laugh": "bah bah",
             "Handled messages": handled_messages,
         }
+        
+        if isinstance(target_channel, discord.abc.GuildChannel):
+            datacf['Watching Guild'] = target_channel.guild.name
+            datacf['Watching Channel'] = f"#{target_channel.name}"
+        
+        if isinstance(ctx, discord.Message) and isinstance(ctx.guild, discord.Guild):
+            if ctx.guild.member_count:
+                if ctx.guild.member_count <= 1:
+                    datacf['(your) Guild members'] = f"{ctx.guild.member_count} member"
+                else:
+                    datacf["(your) Guild members"] = f"{ctx.guild.member_count} members"
+        
         for key, value in datacf.items():
             logger.debug(f"{key}: {value}")
             embed.add_field(name=key,value=value,inline=False)
@@ -612,6 +720,7 @@ class Utility(commands.Cog):
             f"Responded with Shard {bot.shard_id}~ :3",
             f"Current shard count: {bot.shard_count}",
         ]
+        
         await ctx.send("\n".join(dcfata))
     
     @commands.hybrid_command(name="say",aliases=["talk","speak","send"],description="Sends a message to everyone that you did")
@@ -651,8 +760,10 @@ class Utility(commands.Cog):
         try:
             url = os.path.dirname(__file__)
             url2 = os.path.join(url,"images/windows_flavored_off_thing_staticc.gif")
+            
             with open(url2, 'rb') as f:
                 pic = discord.File(f)
+                
             await ctx.send("THINK FAST, CHUCKLE NUTS!",file=pic)
         except Exception as e:
             await ctx.send(f"Error! {e} 3:")
@@ -673,9 +784,11 @@ class Utility(commands.Cog):
             "OW- DON'T HURT ME PLEASE HELP",
             "PLEASE DON'T HURT ME",
         ]
+        
         weights = [
             50,25,25,1,23,45,34,1,23,45,3,2,
         ]
+        
         await ctx.send(random.choices(words,weights=weights)[0] + "\n.... here this is my word. i'm scared to be banned")
         
 

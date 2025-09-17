@@ -3,6 +3,7 @@ import json
 import os
 import random
 import sqlite3
+import discord
 from discord.ext import tasks
 from profanityfilter import ProfanityFilter
 from uwuipy import Uwuipy
@@ -288,6 +289,11 @@ def to_meow_weighted(word):
             ec = round(length * (weights['a'] / total_weight))
             oc = round(length * (weights['o'] / total_weight))
             wc = round(length * (weights['w'] / total_weight))
+        case _:
+            mc = round(length * (weights['m'] / total_weight))
+            ec = round(length * (weights['e'] / total_weight))
+            oc = round(length * (weights['o'] / total_weight))
+            wc = round(length * (weights['w'] / total_weight))
     
     current_length = mc + ec + oc + wc
     diff = length - current_length
@@ -306,13 +312,8 @@ def to_meow_weighted(word):
             meow_word = ("m"*mc)+("i"*ec)+("a"*oc)+("w"*wc)
         case 2:
             meow_word = ("m"*mc)+("a"*ec)+("o"*oc)+("w"*wc)
-    '''
-    if first_char is not None:
-        if first_char.isupper() and word.isupper():
-            return meow_word.upper()
-        elif first_char.isupper():
-            return meow_word.capitalize()
-    '''
+        case _:
+            meow_word = ("m"*mc)+("e"*ec)+("o"*oc)+("w"*wc)
     
     return apply_case_pattern(meow_word, case_pattern)
 
