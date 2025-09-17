@@ -643,6 +643,31 @@ class Manage(commands.Cog):
         await member.edit(timed_out_until=None)
         await ctx.reply(f"Took the timeout for {member.mention}")
 
+class Check(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+    
+    @commands.hybrid_command(name="is_server_nsfw", description="Check if this server is NSFW")
+    async def check_if_server_is_nsfw(self, ctx: commands.Context):
+        reply = ""
+        if ctx.guild:
+            if ctx.guild.nsfw_level == discord.NSFWLevel.default:
+                reply = "Not specified"
+            elif ctx.guild.nsfw_level == discord.NSFWLevel.explicit:
+                reply = "Explicit"
+            elif ctx.guild.nsfw_level == discord.NSFWLevel.safe:
+                reply = "Safe"
+            elif ctx.guild.nsfw_level == discord.NSFWLevel.age_restricted:
+                reply = "Age restricted"
+            else:
+                reply = "Unknown"
+
+        else:
+            await ctx.reply("guild object not found 3:")
+            return
+        
+        await ctx.reply(f"this guild is `{reply}` rating! ;3")
+
 class Senders(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
