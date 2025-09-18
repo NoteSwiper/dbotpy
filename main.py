@@ -142,7 +142,6 @@ async def on_ready():
     await bot.add_cog(Fun(bot))
     await bot.add_cog(Manage(bot))
     await bot.add_cog(Utility(bot))
-    await bot.add_cog(LLM(bot))
     await bot.add_cog(Converters(bot))
     await bot.add_cog(Senders(bot))
     await bot.add_cog(Ssoa9cu2x8(bot))
@@ -166,50 +165,6 @@ async def check_inactivity():
             logger.debug("Bot has been inactive.")
 
 uwu = uwuipy.Uwuipy(power=4,action_chance=0,stutter_chance=0.025,face_chance=0.001)
-
-async def llm_response(ctx, prompt: str, bypass_check: bool = False):
-    global config
-    if config['ai_lockdown']:
-        await ctx.send("i can't talk rn~! 3:")
-        return
-    
-    if not bypass_check and pf.is_profane(prompt):
-        await ctx.send("i don't like bad woords!!! 3:<")
-        return
-    
-    async with ctx.typing():
-        try:
-            stream = ollama.chat(
-                model="gemma3:1b",
-                messages=[
-                    {'role': 'system', 'content': "Make sure to short your response :3"},
-                    {'role': 'user', 'content': prompt}
-                ],
-                stream=True
-            )
-
-            full = ""
-            for part in stream:
-                full += part['message']['content']
-            
-            if len(full) > 250:
-                await ctx.send("awwww i'm yapping so loud!! 3:")
-                return
-            
-            lowered = full.lower()
-            if any(phrase in lowered for phrase in data.AI_RESPONSE_UNABLE):
-                await ctx.send("nawh it sounds bad 3:")
-                return
-            
-            result = pf.censor(full)
-
-            if config['ai_uwuify']:
-                result = uwu.uwuify(result)
-            
-            await ctx.send(result)
-        except Exception as e:
-            await ctx.send(f"whoopsie- {e} error... 3:")
-
 
 async def read():
     global target_channel,last_channel_id,last_interaction
@@ -371,48 +326,6 @@ async def on_message(message: discord.Message):
 @bot.event
 async def on_command_error(ctx: commands.Context, e: commands.CommandError):
     await ctx.send(f"BLARGGHHH- {e}- ughhhh... 3:")
-
-class LLM(commands.Cog, name="AI Responses"):
-    def __init__(self,bot):
-        self.bot = bot
-    
-    @commands.hybrid_command(name="ask", description="Retrieves LLM Response lol")
-    @commands.guild_only()
-    async def ask(self,ctx: commands.Context, *, prompt: str):
-        await llm_response(ctx,prompt)
-    
-    @commands.hybrid_command(name="ai_lockdown", description="Lock AI Response")
-    @commands.guild_only()
-    async def lock(self,ctx):
-        global config
-        if config['ai_lockdown']:
-            await ctx.send("someone already did lockdown me :3")
-            return
-        
-        config['ai_lockdown'] = True
-        await ctx.send("lockdown mode on! :3")
-    
-    @commands.hybrid_command(name="ai_unlockdown", description="Lock AI Response")
-    @commands.guild_only()
-    async def unlock(self,ctx):
-        global config
-        if not config['ai_lockdown']:
-            await ctx.send("am not locked :3")
-            return
-        
-        config['ai_lockdown'] = False
-        await ctx.send("lockdown mode off! :3")
-    
-    @commands.hybrid_command(name="toggle_ai_uwuify", description="Makes AI Response to uwuified")
-    @commands.guild_only()
-    async def uwu(self,ctx):
-        global config
-        config['ai_uwuify'] = not config['ai_uwuify']
-        
-        if config['ai_uwuify']:
-            await ctx.send("hmmm it seems you did uwuify the ai maybe")
-        else:
-            await ctx.send("like it")
 
 class Fun(commands.Cog):
     def __init__(self,bot):
