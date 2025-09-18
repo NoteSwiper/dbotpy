@@ -147,6 +147,7 @@ async def on_ready():
     await bot.add_cog(Senders(bot))
     await bot.add_cog(Ssoa9cu2x8(bot))
     await bot.add_cog(OwnerOnly(bot))
+    await bot.add_cog(Check(bot))
 
     await tree.sync()
 
@@ -800,7 +801,7 @@ class Check(commands.Cog):
 
                 if user.display_avatar:
                     e.set_thumbnail(url=user.display_avatar.url)
-
+                
                 await ctx.send(embed=e)
             else:
                 await ctx.send("User not found!")
@@ -881,7 +882,7 @@ class Utility(commands.Cog):
         
         for key, value in datacf.items():
             logger.debug(f"{key}: {value}")
-            embed.add_field(name=key,value=value,inline=False)
+            embed.add_field(name=key,value=value,inline=True)
         
         await ctx.send(embed=embed)
 
@@ -914,7 +915,7 @@ class Utility(commands.Cog):
     @commands.hybrid_command(name="sayuwuify",aliases=["talk_silly","speak_silly","send_silly","saysilly"],description="Sends a message to everyone that you did")
     @app_commands.describe(msg="Message to send")
     async def say_u(self, ctx: commands.Context, *, msg: str):
-        await ctx.send(f"{stuff.uwuify(uwu,msg)} :3")
+        await ctx.send(f"{stuff.to_uwu(msg)} :3")
     
     @commands.hybrid_command(name="sync_commands",description="syncs command if panic mode")
     @commands.is_owner()
