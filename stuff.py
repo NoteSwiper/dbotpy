@@ -6,6 +6,7 @@ import random
 import sqlite3
 import discord
 from discord.ext import tasks
+import ollama
 from profanityfilter import ProfanityFilter
 from uwuipy import Uwuipy
 import logging
@@ -401,4 +402,3 @@ class CustomUwu:
         except Exception as e:
             print(e)
             return None
-

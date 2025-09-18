@@ -1,13 +1,9 @@
-"""
-Author: NoteSwiper
-"""
-
 import subprocess
 import platform
-import sys
 import asyncio
 import random
 import json
+from typing import Optional
 import uuid
 import os
 import logging
@@ -16,9 +12,6 @@ import base64
 import sqlite3
 import atexit
 import time
-
-from aiohttp import web
-
 import discord
 import pytz
 import uwuipy
@@ -27,9 +20,8 @@ import ollama
 import aioconsole
 
 from dotenv import load_dotenv
-from datetime import datetime, UTC, timezone,timedelta
+from datetime import datetime, UTC,timedelta
 from discord.ext import commands
-from pydub.playback import play
 from discord import app_commands
 from discord.ext import tasks
 from profanityfilter import ProfanityFilter
@@ -420,9 +412,11 @@ class LLM(commands.Cog, name="AI Responses"):
             await ctx.send("hmmm it seems you did uwuify the ai maybe")
         else:
             await ctx.send("like it")
+
 class Fun(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
+
     @commands.hybrid_command(name="pox",description="Say him 'p0x38 is retroslop >:3'")
     async def pox(self, ctx: commands.Context):
         await ctx.send("p0x38 is retroslop >:3")
@@ -571,7 +565,20 @@ class Fun(commands.Cog):
             await ctx.send("# A J*B")
         except Exception as e:
             logger.error(e)
-            
+    
+    @commands.hybrid_command(name="vibecheck",description="Checks vibe")
+    @app_commands.describe(user="Member to check")
+    async def vibecheck(self, ctx: commands.Context, user: Optional[discord.Member|discord.User] = None):
+        if user is None:
+            user = ctx.author
+        rand = round(random.randrange(0,100))
+        
+        await ctx.reply(f"<@{user.id}>'s Vibe percent: {rand} %! :3")
+    
+    @commands.hybrid_command(name="boop",description="boops someone")
+    @app_commands.describe(user="Member to boop")
+    async def boop(self, ctx: commands.Context, user: discord.Member):
+        await ctx.send(f"<@{user.id}> boop :3")
 
 class Ssoa9cu2x8(commands.Cog):
     def __init__(self,bot):
@@ -635,11 +642,33 @@ class Manage(commands.Cog):
         except Exception as e:
             logger.error("Error: {e}")
     
+    @commands.hybrid_command(name="ban", description="Bans member from the server")
+    @commands.has_permissions(ban_members=True)
+    @app_commands.describe(member="Member to ban")
+    @app_commands.describe(reason="Reason to ban")
+    async def ban(self, ctx: commands.Context, member: discord.Member, *, reason: str = ""):
+        try:
+            await member.ban(reason=reason)
+            await member.send(f"You're banned by {ctx.author.name}!\nReason: {reason if reason else 'No reason provided'}")
+            await ctx.reply(f"Banned <@{member.id}>!", ephemeral=True)
+        except Exception as e:
+            await ctx.reply(f"Failed to ban: {e}! 3:", ephemeral=True)
+    
+    @commands.hybrid_command(name="unban", description="Unbans member")
+    @commands.has_permissions(ban_members=True)
+    @app_commands.describe(member="Member to unban")
+    async def unban(self, ctx: commands.Context, member: discord.Member):
+        try:
+            await member.unban()
+            await ctx.reply(f"Unbanned {member.name}!", ephemeral=True)
+        except Exception as e:
+            await ctx.reply(f"Failed to unban: {e} 3:", ephemeral=True)
+    
     @commands.hybrid_command(name="warn", description="Warns member")
     @commands.has_permissions(moderate_members=True)
     @app_commands.describe(member="Member to warn")
     @app_commands.describe(reason="Reason to warn")
-    async def warn(self, ctx: commands.Context, member: discord.Member, *, reason: str):
+    async def warn(self, ctx: commands.Context, member: discord.Member, *, reason: str = ""):
         try:
             await member.send(f"You're warned by {ctx.author.name}!\n\nReason: `{reason}`")
             await ctx.reply(f"Warned <@{member.id}>!", ephemeral=True)
@@ -716,10 +745,68 @@ class Check(commands.Cog):
         
         await ctx.reply(f"this guild is `{reply}` rating! ;3")
     
-    #@commands.hybrid_command(name="check_useractivity", description="Checks user")
-    #async def checkUser(self, ctx: commands.Context, user: discord.Member):
-    #    if user:
-    #        await ctx.reply(f"<@{user.id}> has currently ")
+    @commands.hybrid_command(name="serverinfo",description="Shows information for server")
+    async def serverinfo(self, ctx: commands.Context):
+        guild = ctx.guild
+        if guild and not guild.unavailable == True:
+            temp1 = {
+                'ID': guild.id,
+                'Description': guild.description if guild.description else "No description",
+                'Preffered Locale': guild.preferred_locale.language_code,
+                'Owner': guild.owner,
+                'Members': guild.member_count,
+                'Created on': guild.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                'Current Shard': guild.shard_id if guild.shard_id else "Unknown",
+            }
+            
+            e = discord.Embed(
+                title=f"Information for {guild.name}",
+                color=discord.Color.blue()
+            )
+            
+            for key,value in temp1.items():
+                e.add_field(name=key,value=value, inline=True)
+            
+            if guild.icon:
+                e.set_thumbnail(url=guild.icon.url)
+            
+            await ctx.send(embed=e)
+        else:
+            await ctx.send("It seems the guild unavailable.")
+    
+    @commands.hybrid_command(name="check_user", description="Checks user")
+    async def checkUser(self, ctx: commands.Context, user: discord.Member):
+        try:
+            if user:
+                temp1 = {
+                    'User ID': user.id,
+                    'Name': user.display_name,
+                    'Bot': "True" if user.bot else "False",
+                    'Created on': user.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    'Highest role': user.top_role.name,
+                    'Status': user.raw_status,
+                    'Nitro since': user.premium_since.strftime("%Y-%m-%d %H:%M:%S") if user.premium_since else "Unknown",
+                    'Joined at': user.joined_at.strftime("%Y-%m-%d %H:%M:%S") if user.joined_at else "Unknown",
+                }
+
+                e = discord.Embed(title=f"Information for {user.name}")
+
+                for key,value in temp1.items():
+                    e.add_field(
+                        name=key,
+                        value=value,
+                        inline=True
+                    )
+
+                if user.display_avatar:
+                    e.set_thumbnail(url=user.display_avatar.url)
+
+                await ctx.send(embed=e)
+            else:
+                await ctx.send("User not found!")
+        except Exception as e:
+            await ctx.send(f"Error! {e} 3:")
+            logger.error(f"Error: {e}")
 
 class Senders(commands.Cog):
     def __init__(self,bot):
@@ -735,6 +822,17 @@ class Senders(commands.Cog):
             await ctx.reply(f"DM were sent!", ephemeral=True)
         except Exception as e:
             await ctx.reply(f"Failed to send DM: {e}", ephemeral=True)
+            logger.error(f"Error: {e}")
+    
+    @commands.hybrid_command(name="announce", description="Announces message")
+    @commands.has_permissions(send_messages=True)
+    @app_commands.describe(channel="Channel to send")
+    @app_commands.describe(text="Text to send")
+    async def announce(self, ctx: commands.Context, channel: discord.TextChannel, text: str):
+        try:
+            await channel.send(f"{text}\nAnnounced by <@{ctx.author.id}>")
+        except Exception as e:
+            await ctx.reply(f"Failed to send announce: {e}", ephemeral=True)
             logger.error(f"Error: {e}")
 
 class Utility(commands.Cog):
