@@ -47,7 +47,8 @@ class MyHelpCommand(commands.HelpCommand):
                 temp1 = temp1 + f"\n`{c_name}` - {c_desc}"
             e.add_field(
                 name=f"Category: {cog_name} :3",
-                value=temp1
+                value=temp1,
+                inline=False,
             )
         
         channel = self.get_destination()

@@ -2,6 +2,7 @@
 Author: NoteSwiper
 """
 
+import subprocess
 import platform
 import sys
 import asyncio
@@ -48,6 +49,7 @@ if not os.path.exists("./settings.json"):
 with open("settings.json",'r') as f:
     config = json.load(f)
 
+# very lazy and bad settings configure cuz i'm not so good at coding with python ;(
 stuff.set_if_not_exists(config,"leaderboard_db","leaderboard.db")
 stuff.set_if_not_exists(config,"last_channel",None)
 stuff.set_if_not_exists(config,"last_guild",None)
@@ -84,6 +86,16 @@ formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', 
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+commit_hash = ""
+
+try:
+    output = subprocess.run(['git','rev-parse','--short','HEAD'], capture_output=True, text=True, check=True)
+    commit_hash = output.stdout.strip()
+except subprocess.CalledProcessError as e:
+    logger.error(f"Error occured: {e}")
+except FileNotFoundError:
+    logger.error("Git command not found. make sure to check if Git is installed.")
+
 bot_token = stuff.get_bot_token()
 
 pf = ProfanityFilter()
@@ -106,7 +118,7 @@ INACTIVITY_THRESHOLD = 300
 
 WS_TOKEN = "3yc"
 
-bot = commands.AutoShardedBot(intents=intents, command_prefix=commands.when_mentioned_or("pox!"), help_command=help_command.MyHelpCommand())
+bot = commands.AutoShardedBot(intents=intents, command_prefix=commands.when_mentioned_or("pox!"), help_command=help_command.MyHelpCommand(), owner_id=1321324137850994758)
 tree = bot.tree
 
 target_id = 1413813193616261135
@@ -142,6 +154,7 @@ async def on_ready():
     await bot.add_cog(Converters(bot))
     await bot.add_cog(Senders(bot))
     await bot.add_cog(Ssoa9cu2x8(bot))
+    await bot.add_cog(OwnerOnly(bot))
 
     await tree.sync()
 
@@ -537,13 +550,10 @@ class Fun(commands.Cog):
     @commands.hybrid_command(name="befreaky",description="like a emoji... ahn 🥵")
     @app_commands.describe(by="A member to being freaky to me")
     async def freaky(self, ctx: commands.Context, by: discord.Member|None = None):
-        titl = ""
+        titl = stuff.format_extra(random.choice(data.very_freaky)).format(f"<@{by.id if by else ctx.author.id}>")
         desc = "...EEWWWWWW!!!!!1!1 3:"
         
-        titl = stuff.format_extra(random.choice(data.very_freaky)).format(f"<@{by.id if by else ctx.author.id}>")
-        
-        embed = discord.Embed(title=titl, description=desc)
-        await ctx.send(embed=embed)
+        await ctx.reply(f"{titl}\n{desc}")
     
     @commands.hybrid_command(name="pox_schooldate",description="Check if owner of the bot is in school")
     async def check_schooldate(self,ctx):
@@ -552,6 +562,16 @@ class Fun(commands.Cog):
     @commands.hybrid_command(name="emoticon",description="Sends random emoticon")
     async def emoticon(self,ctx):
         await ctx.send(random.choice(data.emoticons))
+    
+    @commands.hybrid_command(name="a_jorb",description="yeah")
+    async def ajob(self, ctx):
+        try:
+            await ctx.send("Today, I'll be talking about one of humanity's biggest fears")
+            await asyncio.sleep(2)
+            await ctx.send("# A J*B")
+        except Exception as e:
+            logger.error(e)
+            
 
 class Ssoa9cu2x8(commands.Cog):
     def __init__(self,bot):
@@ -643,6 +663,34 @@ class Manage(commands.Cog):
         await member.edit(timed_out_until=None)
         await ctx.reply(f"Took the timeout for {member.mention}")
 
+class OwnerOnly(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+    
+    @commands.hybrid_command(name="delete_botmessages",description="Deletes a nyan bot's messages")
+    @app_commands.describe(limit="How much bot deletes it")
+    @commands.has_permissions(manage_channels=True, manage_messages=True)
+    @commands.is_owner()
+    async def kill_myself(self, ctx: commands.Context, limit: int = 100):
+        def check_messages(m):
+            is_bot = m.author == bot.user
+            is_replied = False
+            if m.reference and m.reference.resolved:
+                is_replied = m.reference.resolved.author == bot.user
+            
+            return is_bot or is_replied
+            
+        deleted_count = 0
+        
+        if isinstance(ctx.channel, discord.abc.GuildChannel):
+            while True:
+                deleted = await ctx.channel.purge(limit=limit, check=check_messages)
+                deleted_count += len(deleted)
+                if len(deleted) < limit:
+                    break
+                
+            await ctx.reply(f"Deleted {deleted_count} messages including the messages that replied to me.", delete_after=5, ephemeral=True)
+
 class Check(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -667,6 +715,11 @@ class Check(commands.Cog):
             return
         
         await ctx.reply(f"this guild is `{reply}` rating! ;3")
+    
+    #@commands.hybrid_command(name="check_useractivity", description="Checks user")
+    #async def checkUser(self, ctx: commands.Context, user: discord.Member):
+    #    if user:
+    #        await ctx.reply(f"<@{user.id}> has currently ")
 
 class Senders(commands.Cog):
     def __init__(self,bot):
@@ -697,9 +750,10 @@ class Utility(commands.Cog):
         global session_uuid,handled_messages,target_channel
         embed = discord.Embed(title="Info of myself and others stuff :3")
         datacf = {
-            '(not discord\'s) Session UUID': str(session_uuid),
-            '"discord.py" Version': discord.__version__,
+            'Session UUID': str(session_uuid),
+            'discord.py Version': discord.__version__,
             'Python Version': "Python "+platform.python_version(),
+            'Bot version': f"git+{commit_hash}" if commit_hash else "Unknown",
             'Platform info': platform.platform(),
             'Ubuntu Distribution': distro.name() + " " + distro.version(),
             'Total guilds': len(bot.guilds),
@@ -815,7 +869,6 @@ class Utility(commands.Cog):
         ]
         
         await ctx.send(random.choices(words,weights=weights)[0] + "\n.... here this is my word. i'm scared to be banned")
-        
 
 def save():
     stuff.save(config)

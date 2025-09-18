@@ -1,4 +1,5 @@
 import datetime
+import subprocess
 import json
 import os
 import random
@@ -334,3 +335,70 @@ def meow_phrase_weighted(phrase):
         final_phrase += to_meow_weighted(current_word)
     
     return final_phrase
+
+class CustomUwu:
+    def convert(self, text: str):
+        regex_maps = [
+            (r'(?:h)ey','\1ay'),
+            (r'dead','ded'),
+            (r'n[aeiou]*t', 'nd'),
+            (r'read','wead'),
+            (r'that','dat'),
+            (r'th(?!e)','f'),
+            (r've','we'),
+            (r'le$','wal'),
+            (r'ry','wwy'),
+            (r'(?:r|l)','w'),
+            (r'll','w'),
+            (r'[aeiur]l$','wl'),
+            (r'(?:o)ld','\1wld'),
+            (r'ol','owl'),
+            (r'[lr]o','wo'),
+            (r'([bcdfghjkmnpqstxyz])o','\1wo'),
+            (r'[vw]le','wal'),
+            (r'(?:f)i','\1wi'),
+            (r'(?:v)er','wer'),
+            (r'(?:p)oi','\1woi'),
+            (r'(?:dfghjpqrstxyz)le$','\1wal'),
+            (r'ly','wy'),
+            (r'(?:p)le','\1we'),
+            (r'(?:n)r','\1w'),
+            (r'mem','mwem'),
+            (r'(?:n)ywo','\1yo'),
+            (r'(?:f)uc','\1wuc'),
+            (r'(?:m)om','\1wom'),
+            (r'^me$', 'mwe'),
+            (r'n(?:[aeiou])','ny\1'),
+            (r'ove','uv'),
+            (r'\b(?:ha|hah|heh|hehe)+\b','hehe'),
+            (r'\b(?:t)he\b','\1eh'),
+            (r'\byou\b','u'),
+            (r'\b(?:t)ime\b','\1im'),
+            (r'(?:o)ver','\1wer'),
+            (r'(?:w)orse','\1ose'),
+            (r'(?:g)reat','\1wate'),
+            (r'(?:a)viat','\1wiat'),
+            (r'(?:d)edicat','\1editat'),
+            (r'(?:r)emember','\1ember'),
+            (r'(?:w)hen','\1en'),
+            (r'(?:f)righten(ed)*','\1rigten'),
+            (r'meme','mem'),
+            (r'(?:f)eel$','\1ell'),
+            (r'(?:[<>])?[:;=\'_]+-?[\)\]\>]+',"\1:3"),
+            (r'[<\[\(]+-?[:;=\'_]+(?:[<>])?',"\1:3"),
+            (r'(?:[>])?[:;=\'_]+-?[\(\[\<]+',"3:\1"),
+            (r'[>?\]\)]+-?[:;=\'_]+(?:[<>])?',"3:\1"),
+            (r'(?:[><])?[xX:;=\']+[dD]+',"\1x3"),
+            (r'[dD]+[xX:;=\']+(?:[><])?',"\1x3"),
+        ]
+        try:
+            text = text.lower()
+            
+            for regex, replace_to in regex_maps:
+                text = re.sub(regex,replace_to,text)
+            
+            return text
+        except Exception as e:
+            print(e)
+            return None
+
