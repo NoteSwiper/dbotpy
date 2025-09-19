@@ -14,6 +14,7 @@ import logging
 import logging.handlers
 import dotenv
 import re
+import base64
 
 import data
 
@@ -338,7 +339,7 @@ def meow_phrase_weighted(phrase):
     
     return final_phrase
 
-def to_uwu(text: str):
+def to_uwu(text: str) -> str:
     regex_maps = [
         (r'(?:h)ey','\1ay'),
         (r'dead','ded'),
@@ -418,4 +419,10 @@ def to_uwu(text: str):
         return " ".join(words)
     except Exception as e:
         print(e)
-        return None
+        return text
+
+def base64_encode(text: str):
+    return base64.b64encode(text.encode()).decode()
+
+def base64_decode(b64: str):
+    return base64.b64decode(b64.encode()).decode()

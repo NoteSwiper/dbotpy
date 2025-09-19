@@ -123,6 +123,8 @@ current_guild = 0
 
 last_channel_id = get_lastchannel_id() or target_id
 
+uwuify_flags = []
+
 @bot.event
 async def on_ready():
     global target_channel, target_id,last_channel_id
@@ -131,13 +133,7 @@ async def on_ready():
     target_channel = bot.get_channel(last_channel_id)
 
     await bot.change_presence(activity=discord.CustomActivity(name=config['last_activity'] if config['last_activity'] else "meow :)"))
-    if isinstance(target_channel, discord.abc.GuildChannel):
-        logger.info(f"Current guild: {target_channel.guild.name if target_channel and target_channel.guild else "Unknown guild"}")
-        logger.info(f"Current channel: #{target_channel.name if target_channel else "Unknown channel"}")
-    elif isinstance(target_channel, discord.abc.PrivateChannel):
-        logger.info("Current guild: None")
-        logger.info("Current channel: Private channel")
-    
+    # last existance c139a7df8e73d7609ee20aeeee0cc274733dbe60
     stuff.setup_database(config['leaderboard_db'])
     await bot.add_cog(Fun(bot))
     await bot.add_cog(Manage(bot))
@@ -147,11 +143,11 @@ async def on_ready():
     await bot.add_cog(Ssoa9cu2x8(bot))
     await bot.add_cog(OwnerOnly(bot))
     await bot.add_cog(Check(bot))
+    await bot.add_cog(Togglers(bot))
 
     await tree.sync()
 
     check_inactivity.start()
-    bot.loop.create_task(read())
 
 @tasks.loop(seconds=60)
 async def check_inactivity():
@@ -166,115 +162,17 @@ async def check_inactivity():
 
 uwu = uwuipy.Uwuipy(power=4,action_chance=0,stutter_chance=0.025,face_chance=0.001)
 
-async def read():
-    global target_channel,last_channel_id,last_interaction
-    while True:
-        message_content = await aioconsole.ainput("")
-        args = message_content.lower().split(" ")
-        if message_content:
-            match args[0]:
-                case 'exit':
-                    print("3:")
-                    logger.info("3:")
-                    return
-                
-                case "channel:" :
-                    if await stuff.isInt(args[1]):
-                        channelid = int(args[1])
-                        channel_temp = bot.get_channel(channelid)
-                        if channel_temp and isinstance(channel_temp,discord.abc.GuildChannel):
-                            target_channel = channel_temp
-                            save_lastchannel_id(channelid)
-                            last_channel_id = channelid
-                            logger.info(f"BOT: {message_content}")
-                            print(f"Channel changed to {target_channel.guild.name}'s {target_channel.name}! :3")
-                            #await target_channel.send(uwu.uwuify("Hello from some other nan channel in a row! :3"))
-                        elif channel_temp:
-                            print("You cannot go to Private channel or Threads!!! 3:<")
-                        else:
-                            print(f"Channel {channelid} not found from my view! 3:")
-                    
-                case "activity:":
-                    logger.info(f"ACTIVITY: {" ".join(args[1:])}")
-                    await bot.change_presence(activity=discord.CustomActivity(name=" ".join(args[1:])))
-                
-                case "toggle:":
-                    if args[1]:
-                        await stuff.change_toggles(config,args[1])
-                
-                case _:
-                    if target_channel and message_content:
-                        try:
-                            censored = message_content
-
-                            try:
-                                if config['repeat']:
-                                    censored = stuff.format_extra(censored)
-                                
-                                if config['uwuify']:
-                                    censored = stuff.uwuify(uwu,censored)
-                                
-                                if config['muffle']:
-                                    censored = stuff.muffle(censored)
-                                
-                                if config['base64']:
-                                    censored = base64.b64encode(censored.encode()).decode()
-                                
-                                if config['censor']:
-                                    censored = stuff.censor(pf,censored)
-                                
-                                if config['shout']:
-                                    if censored:
-                                        censored = f"# **{censored.replace("*",r"\*")}**"
-                                
-                                if config['meow']:
-                                    censored = stuff.meow_phrase_weighted(censored)
-
-                                last_interaction = datetime.now(UTC)
-
-                                if bot.activity and bot.activity.name == "zzz...":
-                                    await bot.change_presence(activity=discord.CustomActivity(name="O_O"))
-                                
-                                logger.info(f"BOT: {censored}")
-                                
-                                if isinstance(target_channel, discord.abc.GuildChannel) and not isinstance(target_channel, (discord.ForumChannel, discord.CategoryChannel)):
-                                    await target_channel.send(censored)
-                            except Exception as e:
-                                logger.error(f"Failed to send message: {e} 3:")
-                        except Exception as e:
-                            logger.error(f"Unknown error occured: {e} 3:")
-        else:
-            print("Message not provided.")
+# last existance c139a7df8e73d7609ee20aeeee0cc274733dbe60
 
 @bot.event
 async def on_message(message: discord.Message):
     global last_interaction,handled_messages
-    if message.channel == discord.DMChannel:
-        return
+    
+    # last existance c139a7df8e73d7609ee20aeeee0cc274733dbe60
     
     handled_messages += 1
-    temp = f"{message.author.display_name} ({message.author.name})" if (message.author.display_name and message.author.display_name != message.author.name) else f"@{message.author.name}"
-    temp2 = []
     
-    if message.author.system:
-        temp2.append("[SYS]")
-
-    if message.author.bot:
-        temp2.append("[BOT]")
-    
-    if message.type == discord.MessageType.reply:
-        temp2.append("[REPLY]")
-
-    if message.channel == target_channel:
-        if isinstance(message.channel, discord.abc.GuildChannel):
-            logger.info(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{[item.filename for item in message.attachments] if message.attachments else ""}")
-        else:
-            logger.debug(f"[Private] {temp}{" ".join(temp2)}: {message.content}")
-    else:
-        if isinstance(message.channel, discord.abc.GuildChannel):
-            logger.info(f"[{message.guild.name if message.guild else "???"} #{message.channel.name}] {temp}{" ".join(temp2)}: {message.content}{[item.filename for item in message.attachments] if message.attachments else ""}")
-        else:
-            logger.debug(f"[Private] {temp}{" ".join(temp2)}: {message.content}")
+    # last existance c139a7df8e73d7609ee20aeeee0cc274733dbe60
     
     if message.author == bot.user:
         return
@@ -296,10 +194,10 @@ async def on_message(message: discord.Message):
         logger.error(f"bot.user not found.")
     
     pox_word_count = 0
-    separated_words = message.content.split(" ")
+    separated_words = message.content.lower().split(" ")
     
-    if "pox" in message.content.lower().split():
-        for word in message.content.lower().split():
+    if "pox" in separated_words:
+        for word in separated_words:
             if word == "pox":
                 pox_word_count += 1
         
@@ -322,6 +220,13 @@ async def on_message(message: discord.Message):
     if message.content.startswith("pox!"):
         handled_messages += 1
         await bot.process_commands(message)
+    
+    #if message.author.id in uwuify_flags or message.author.id == bot.owner_id:
+    #    try:
+    #        uwuified = stuff.to_uwu(message.content)
+    #        await message.edit(content=uwuified)
+    #    except Exception as e:
+    #        logger.error(e)
 
 @bot.event
 async def on_command_error(ctx: commands.Context, e: commands.CommandError):
@@ -541,6 +446,30 @@ class Converters(commands.Cog):
             await ctx.reply(stuff.meow_phrase_weighted(text))
         except Exception as e:
             await ctx.reply(f"Error occured! {e}")
+    
+    @commands.hybrid_command(name="uwuify", description="same with say_uwuify, but with mention lol")
+    @app_commands.describe(text="Text to be uwuified")
+    async def uwuify(self, ctx: commands.Context, text: str):
+        try:
+            await ctx.reply(f"<@{ctx.author.id}>: {stuff.to_uwu(text)}")
+        except Exception as e:
+            await ctx.reply(f"Error: {e} 3:")
+    
+    @commands.hybrid_command(name="base64ify", description="Makes your message into base64")
+    @app_commands.describe(text="Text to be base64-ified")
+    async def base64ify(self, ctx: commands.Context, text: str):
+        try:
+            await ctx.reply(f"<@{ctx.author.id}>: {stuff.base64_encode(text)}")
+        except Exception as e:
+            await ctx.reply(f"Error: {e} 3:")
+    
+    @commands.hybrid_command(name="un_base64ify", description="Makes your base64 message decoded")
+    @app_commands.describe(text="Base64 to be textified")
+    async def debase64ify(self, ctx: commands.Context, text: str):
+        try:
+            await ctx.reply(f"<@{ctx.author.id}>: {stuff.base64_encode(text)}")
+        except Exception as e:
+            await ctx.reply(f"Error: {e} 3:")
 
 class Manage(commands.Cog):
     def __init__(self,bot):
@@ -749,6 +678,32 @@ class Senders(commands.Cog):
             await ctx.reply(f"Failed to send announce: {e}", ephemeral=True)
             logger.error(f"Error: {e}")
 
+class Togglers(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+    
+#    @commands.hybrid_command(name="uwuify_member", description="Makes member's message uwu :3")
+#    @commands.guild_only()
+#    @app_commands.describe(member="Member to be uwuified")
+#    async def uwuify(self, ctx: commands.Context, member: discord.Member):
+#        if member.id in uwuify_flags:
+#            await ctx.reply(f"{member.name} already has uwuified!")
+#            return
+#        
+#        uwuify_flags.append(member.id)
+#        await ctx.reply(f"Uwuified <@{member.id}>!")
+#    
+#    @commands.hybrid_command(name="unuwuify_member", description="Makes member's message normal :3")
+#    @commands.guild_only()
+#    @app_commands.describe(member="Member to be un-uwuified")
+#    async def unuwuify(self, ctx: commands.Context, member: discord.Member):
+#        if not member.id in uwuify_flags:
+#            await ctx.reply(f"{member.name} doesn't uwuified!")
+#            return
+#        
+#        uwuify_flags.append(member.id)
+#        await ctx.reply(f"Un-uwuified <@{member.id}>!")
+
 class Utility(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
@@ -771,8 +726,7 @@ class Utility(commands.Cog):
             'Total guilds': len(bot.guilds),
             'Total Cached Messages': len(bot.cached_messages),
             'Latency (milliseconds)': round(bot.latency*100000)/100,
-            'Watching Guild': "Unknown",
-            'Watching Channel': "Unknown",
+            # last existance c139a7df8e73d7609ee20aeeee0cc274733dbe60
             '(your) Guild members': "Unknown",
             'NSFW?': "Maybe, s****-",
             'Is it unrelated?': "yeah!!!!",
@@ -782,11 +736,9 @@ class Utility(commands.Cog):
             "Handled messages": handled_messages,
         }
         
-        if isinstance(target_channel, discord.abc.GuildChannel):
-            datacf['Watching Guild'] = target_channel.guild.name
-            datacf['Watching Channel'] = f"#{target_channel.name}"
+        # last existance c139a7df8e73d7609ee20aeeee0cc274733dbe60
         
-        if isinstance(ctx, discord.Message) and isinstance(ctx.guild, discord.Guild):
+        if isinstance(ctx.guild, discord.Guild):
             if ctx.guild.member_count:
                 if ctx.guild.member_count <= 1:
                     datacf['(your) Guild members'] = f"{ctx.guild.member_count} member"
