@@ -347,7 +347,7 @@ def meow_phrase_weighted(phrase):
 
 def to_uwu(text: str) -> str:
     regex_maps = [
-        (r'(?:h)ey','\\1ay'),
+        (r'hey','hay'),
         (r'dead','ded'),
         (r'n[aeiou]*t', 'nd'),
         (r'read','wead'),
@@ -356,42 +356,41 @@ def to_uwu(text: str) -> str:
         (r've','we'),
         (r'le$','wal'),
         (r'ry','wwy'),
-        (r'(?:r|l)','w'),
+        (r'[rw]','w'),
         (r'll','w'),
         (r'[aeiur]l$','wl'),
-        (r'(?:o)ld','\\1wld'),
         (r'ol','owl'),
         (r'[lr]o','wo'),
         (r'([bcdfghjkmnpqstxyz])o','\\1wo'),
         (r'[vw]le','wal'),
-        (r'(?:f)i','\\1wi'),
-        (r'(?:v)er','wer'),
-        (r'(?:p)oi','\\1woi'),
+        (r'fi','fwi'),
+        (r'ver','wer'),
+        (r'poi','pwoi'),
         (r'(?:dfghjpqrstxyz)le$','\\1wal'),
         (r'ly','wy'),
-        (r'(?:p)le','\\1we'),
-        (r'(?:n)r','\\1w'),
+        (r'ple','pwe'),
+        (r'nr','nw'),
         (r'mem','mwem'),
-        (r'(?:n)ywo','\\1yo'),
-        (r'(?:f)uc','\\1wuc'),
-        (r'(?:m)om','\\1wom'),
+        (r'nywo','nyo'),
+        (r'fuc','fwuc'),
+        (r'mom','mwom'),
         (r'^me$', 'mwe'),
         (r'n(?:[aeiou])','ny\\1'),
         (r'ove','uv'),
         (r'\b(?:ha|hah|heh|hehe)+\b','hehe'),
-        (r'\b(?:t)he\b','\\1eh'),
+        (r'the','teh'),
         (r'\byou\b','u'),
-        (r'\b(?:t)ime\b','\\1im'),
-        (r'(?:o)ver','\\1wer'),
-        (r'(?:w)orse','\\1ose'),
-        (r'(?:g)reat','\\1wate'),
-        (r'(?:a)viat','\\1wiat'),
-        (r'(?:d)edicat','\\1editat'),
-        (r'(?:r)emember','\\1ember'),
-        (r'(?:w)hen','\\1en'),
-        (r'(?:f)righten(ed)*','\\1rigten'),
+        (r'\btime\b','tim'),
+        (r'over','ower'),
+        (r'worse','wose'),
+        (r'great','gwate'),
+        (r'aviat','awiat'),
+        (r'dedicat','deditat'),
+        (r'remember','rember'),
+        (r'when','wen'),
+        (r'frighten(ed)*','\\1rigten'),
         (r'meme','mem'),
-        (r'(?:f)eel$','\\1ell'),
+        (r'feel$','fell'),
         (r'(?:[<>])?[:;=\'_]+-?[\)\]\>]+',"\\1:3"),
         (r'[<\[\(]+-?[:;=\'_]+(?:[<>])?',"\\1:3"),
         (r'(?:[>])?[:;=\'_]+-?[\(\[\<]+',"3:\\1"),
@@ -413,7 +412,9 @@ def to_uwu(text: str) -> str:
             
             stutter = ""
             for regex, replace_to in regex_maps:
-                word = re.sub(regex,replace_to,word)
+                if re.match(regex,word):
+                    print(f"Resolver: {regex}, {replace_to}, {word}")
+                    word = re.sub(regex,replace_to,word)
             
             if unicodedata.category(word[0]).lower().startswith("l"):
                 if random.random() > 0.121:

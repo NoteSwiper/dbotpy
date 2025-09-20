@@ -208,14 +208,15 @@ async def on_message(message: discord.Message):
         msg: str = message.content.replace(f'<@{bot.user.id}>','').strip()
         words = msg.lower().split(" ")
         if msg:
-            cursor.execute("SELECT amount FROM poxcoins WHERE user_id = ?", (str(message.author.id)),)
+            user_id = str(message.author.id)
+            cursor.execute("SELECT amount FROM poxcoins WHERE user_id = ?", (user_id,))
             result = cursor.fetchone()
             
             if result:
                 new = result[0] + len(words)
-                cursor.execute("UPDATE poxcoins SET amount = ? WHERE user_id = ?", (new,message.author.id))
+                cursor.execute("UPDATE poxcoins SET amount = ? WHERE user_id = ?", (new,user_id))
             else:
-                cursor.execute("INSERT INTO poxcoins (user_id, amount) VALUES (?, ?)", (message.author.id, len(words)))
+                cursor.execute("INSERT INTO poxcoins (user_id, amount) VALUES (?, ?)", (user_id, len(words)))
             
             conn.commit()
             conn.close()
@@ -522,7 +523,7 @@ class Converters(commands.Cog):
     @app_commands.describe(text="Base64 to be textified")
     async def debase64ify(self, ctx: commands.Context, text: str):
         try:
-            await ctx.reply(f"<@{ctx.author.id}>: {stuff.base64_encode(text)}")
+            await ctx.reply(f"<@{ctx.author.id}>: {stuff.base64_decode(text)}")
         except Exception as e:
             await ctx.reply(f"Error: {e} 3:")
 
