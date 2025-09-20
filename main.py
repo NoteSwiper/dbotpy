@@ -124,6 +124,7 @@ handled_messages = 0
 current_guild = 0
 
 namesignature = stuff.generate_namesignature()
+last_commit_message = stuff.get_latest_commit_message()
 
 last_channel_id = get_lastchannel_id() or target_id
 
@@ -766,7 +767,7 @@ class Utility(commands.Cog):
         embed = discord.Embed(title="Info of myself and others stuff :3")
         datacf = {
             'Session UUID': str(session_uuid),
-            'Version': f"Python {platform.python_version()}, discord.py {discord.__version__}, " + (f"git+{commit_hash} ({namesignature})" if commit_hash else "Unknown"),
+            'Version': f"Python {platform.python_version()}, discord.py {discord.__version__}, " + (f"(git+{commit_hash} {last_commit_message}) ({namesignature})" if commit_hash else "Unknown"),
             'Platform info': "",
             'Total guilds': len(bot.guilds),
             'Total Cached Messages': len(bot.cached_messages),

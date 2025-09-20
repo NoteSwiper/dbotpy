@@ -444,4 +444,19 @@ def generate_namesignature():
     
     return string.upper()
 
-print(generate_namesignature())
+def get_latest_commit_message():
+    try:
+        result = subprocess.run(
+            ['git','log','-1','--pretty=%B'],
+            cwd='.',
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error occured: {e}")
+        return None
+    except FileNotFoundError:
+        logger.error("git command not found")
+        return None
