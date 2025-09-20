@@ -403,6 +403,10 @@ class Fun(commands.Cog):
     @app_commands.describe(user="Member to boop")
     async def boop(self, ctx: commands.Context, user: discord.Member):
         await ctx.send(f"<@{user.id}> boop :3")
+    
+    @commands.hybrid_command(name="idek", description="idek.")
+    async def idek(self, ctx):
+        await ctx.reply(f"idek")
 
 class Ssoa9cu2x8(commands.Cog):
     def __init__(self,bot):
