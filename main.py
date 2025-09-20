@@ -18,7 +18,9 @@ import uwuipy
 import distro
 import ollama
 import aioconsole
+import io
 
+from gtts import gTTS
 from dotenv import load_dotenv
 from datetime import datetime, UTC,timedelta
 from discord.ext import commands
@@ -120,6 +122,8 @@ session_uuid = uuid.uuid4()
 last_interaction = datetime.now(UTC)
 handled_messages = 0
 current_guild = 0
+
+namesignature = stuff.generate_namesignature()
 
 last_channel_id = get_lastchannel_id() or target_id
 
@@ -677,6 +681,27 @@ class Senders(commands.Cog):
         except Exception as e:
             await ctx.reply(f"Failed to send announce: {e}", ephemeral=True)
             logger.error(f"Error: {e}")
+    
+    @commands.hybrid_command(name="send_tts", description="Generates a speech audio")
+    async def say(self, ctx: commands.Context, text: str):
+        await ctx.defer()
+        
+        abuffer = io.BytesIO()
+        try:
+            tts = gTTS(text=text)
+            tts.write_to_fp(abuffer)
+            
+            abuffer.seek(0)
+        except Exception as e:
+            await ctx.reply(f"An error occured while generating speech: {e}!")
+            return
+        
+        dfile = discord.File(abuffer, filename="speech.mp3")
+        
+        try:
+            await ctx.reply(file=dfile)
+        except Exception as e:
+            await ctx.reply(f"An error occured while sending the file: {e}")
 
 class Togglers(commands.Cog):
     def __init__(self, bot):
@@ -704,6 +729,29 @@ class Togglers(commands.Cog):
 #        uwuify_flags.append(member.id)
 #        await ctx.reply(f"Un-uwuified <@{member.id}>!")
 
+class Experimental(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+    
+    @commands.hybrid_command(name="get_poxcoins", description="Get random poxcoins literally")
+    async def get(self ,ctx: commands.Context):
+        user_id = str(ctx.author.id)
+        conn = sqlite3.connect(config['leaderboard_db'])
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT amount FROM poxcoins WHERE user_id = ?", (user_id,))
+        result = cursor.fetchone()
+
+        if result:
+            new_count = result[0] + abs(random.gauss(0,0.1))
+            cursor.execute("UPDATE poxcoins SET amount = ? WHERE user_id = ?", (new_count,user_id))
+        else:
+            cursor.execute("INSERT INTO poxcoins (user_id, amount) VALUES (?, ?)", (user_id, random.gauss(0,0.1)))
+        
+        conn.commit()
+        conn.close()
+
+
 class Utility(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
@@ -718,11 +766,8 @@ class Utility(commands.Cog):
         embed = discord.Embed(title="Info of myself and others stuff :3")
         datacf = {
             'Session UUID': str(session_uuid),
-            'discord.py Version': discord.__version__,
-            'Python Version': "Python "+platform.python_version(),
-            'Bot version': f"git+{commit_hash}" if commit_hash else "Unknown",
-            'Platform info': platform.platform(),
-            'Ubuntu Distribution': distro.name() + " " + distro.version(),
+            'Version': f"Python {platform.python_version()}, discord.py {discord.__version__}, " + (f"git+{commit_hash} ({namesignature})" if commit_hash else "Unknown"),
+            'Platform info': "",
             'Total guilds': len(bot.guilds),
             'Total Cached Messages': len(bot.cached_messages),
             'Latency (milliseconds)': round(bot.latency*100000)/100,
@@ -736,9 +781,18 @@ class Utility(commands.Cog):
             "Handled messages": handled_messages,
         }
         
+        if platform.system() == "Linux":
+            os_rel = platform.freedesktop_os_release()
+            if os_rel and os_rel.get("ID") == "ubuntu":
+                datacf['Platform info'] = f"{distro.name()} {distro.version()}"
+            else:
+                datacf['Platform info'] = platform.platform()
+        else:
+            datacf['Platform info'] = platform.platform()
+        
         # last existance c139a7df8e73d7609ee20aeeee0cc274733dbe60
         
-        if isinstance(ctx.guild, discord.Guild):
+        if ctx.guild:
             if ctx.guild.member_count:
                 if ctx.guild.member_count <= 1:
                     datacf['(your) Guild members'] = f"{ctx.guild.member_count} member"

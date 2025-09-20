@@ -162,6 +162,12 @@ def setup_database(database):
             pox_count INTEGER
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS poxcoins (
+            user_id TEXT PRIMARY KEY,
+            amount REAL
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -426,3 +432,16 @@ def base64_encode(text: str):
 
 def base64_decode(b64: str):
     return base64.b64decode(b64.encode()).decode()
+
+def generate_namesignature():
+    string = ""
+    for i in range(random.randint(3,5)):
+        string += random.choice(list(data.alphabet_masks))[0]
+    
+    if random.randint(0,20) == 0:
+        for i in range(random.randint(2,3)):
+            string += str(random.randint(0,9))
+    
+    return string.upper()
+
+print(generate_namesignature())

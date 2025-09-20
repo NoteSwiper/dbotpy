@@ -180,3 +180,5 @@ very_freaky = [
     "pleas++e++ sto+p+... {}... 🥵++",
     "a+h++n+++~ sto++p+++ {}~+++",
 ]
+
+alphabet_masks = "abcdefghijklmnopqrstuvwxyz"
