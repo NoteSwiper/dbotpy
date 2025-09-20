@@ -353,6 +353,33 @@ class Fun(commands.Cog):
     
         await ctx.send(embed=embed)
     
+    '''
+    @commands.hybrid_command(name="leaderboard",description="Shows leaderboard in server how many they said")
+    async def leedaa(self, ctx: commands.Context):
+        conn = sqlite3.connect(config['leaderboard_db'])
+        cursor = conn.cursor()
+    
+        cursor.execute("SELECT user_id, amount FROM poxcoins ORDER BY amount DESC LIMIT 32")
+        leaderboard_data = cursor.fetchall()
+        conn.close()
+        desc = ""
+        if len(leaderboard_data) == 0:
+            desc = "No one has said pox yet 3:"
+        else:
+            for i , (id,count) in enumerate(leaderboard_data,1):
+                desc += f"{i}. <@{id}>: {count} times!\n"
+        
+        desc += "\nData were stored in BOT Server."
+        
+        embed = discord.Embed(
+            title="**Pox Leaderboard**",
+            description=desc,
+            color=0xFFA500
+        )
+    
+        await ctx.send(embed=embed)
+    '''
+    
     @commands.hybrid_command(name="ispoxactive",description="Check if pox is active")
     async def ispoxactive(self, ctx: commands.Context):
         now = datetime.now(pytz.timezone('Asia/Tokyo'))
