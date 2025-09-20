@@ -201,6 +201,25 @@ async def on_message(message: discord.Message):
     pox_word_count = 0
     separated_words = message.content.lower().split(" ")
     
+    conn = sqlite3.connect(config['leaderboard_db'])
+    cursor = conn.cursor()
+    
+    if bot.user:
+        msg: str = message.content.replace(f'<@{bot.user.id}>','').strip()
+        words = msg.lower().split(" ")
+        if msg:
+            cursor.execute("SELECT amount FROM poxcoins WHERE user_id = ?", (str(message.author.id)),)
+            result = cursor.fetchone()
+            
+            if result:
+                new = result[0] + len(words)
+                cursor.execute("UPDATE poxcoins SET amount = ? WHERE user_id = ?", (new,message.author.id))
+            else:
+                cursor.execute("INSERT INTO poxcoins (user_id, amount) VALUES (?, ?)", (message.author.id, len(words)))
+            
+            conn.commit()
+            conn.close()
+    
     if "pox" in separated_words:
         for word in separated_words:
             if word == "pox":
