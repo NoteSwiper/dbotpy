@@ -212,3 +212,5 @@ logs/**
 leaderboard.db
 settings.json
 test.py
+
+others/markov.txt

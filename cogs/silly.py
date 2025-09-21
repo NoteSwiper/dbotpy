@@ -4,6 +4,7 @@ from typing import Optional
 import os
 import sqlite3
 import discord
+import markovify
 import pytz
 from dotenv import load_dotenv
 from datetime import datetime, UTC
@@ -218,6 +219,15 @@ class Silly(commands.Cog):
         embed = discord.Embed(title=svp,description=desc)
         
         await ctx.reply(embed=embed)
-
+    
+    @commands.hybrid_command(name="markov_test", description="yes")
+    async def markv(self, ctx: commands.Context):
+        with open("./others/markov.txt") as f:
+            text = f.read()
+        
+        model = markovify.Text(text, state_size=3)
+        
+        await ctx.reply(model.make_sentence())
+    
 async def setup(bot):
     await bot.add_cog(Silly(bot))

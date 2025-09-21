@@ -84,6 +84,8 @@ class Management(commands.Cog):
     @commands.has_permissions(manage_channels=True, manage_messages=True)
     @commands.is_owner()
     async def kill_myself(self, ctx: commands.Context, limit: int = 100):
+        await ctx.defer()
+        
         def check_messages(m):
             is_bot = m.author == self.bot.user
             is_replied = False
@@ -162,13 +164,14 @@ class Management(commands.Cog):
                     'Name': user.display_name,
                     'Bot': "True" if user.bot else "False",
                     'Created on': user.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                    'Highest role': user.top_role.name,
+                    'Highest role': f"<@{user.top_role.name}>",
                     'Status': user.raw_status,
                     'Nitro since': user.premium_since.strftime("%Y-%m-%d %H:%M:%S") if user.premium_since else "Unknown",
                     'Joined at': user.joined_at.strftime("%Y-%m-%d %H:%M:%S") if user.joined_at else "Unknown",
+                    'Roles': [f"<@{role.id}>" for role in user.roles]
                 }
 
-                e = discord.Embed(title=f"Information for {user.name}")
+                e = discord.Embed(title=f"Information for <@{user.id}>")
 
                 for key,value in temp1.items():
                     e.add_field(
@@ -186,7 +189,40 @@ class Management(commands.Cog):
         except Exception as e:
             await ctx.send(f"Error! {e} 3:")
             logger.error(f"Error: {e}")
+    
+    @commands.hybrid_command(name="check_role", description="Checks role")
+    async def checkRole(self, ctx: commands.Context, role: discord.Role):
+        try:
+            if role:
+                temp1 = {
+                    'Role ID': role.id,
+                    'Role Name': role.name,
+                    'Role Color': role.color,
+                    'Created on': role.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    'Managed Role?': "Yeah" if role.managed == True else ("Nah" if role.managed == False else "I dunno"),
+                    "Can be mentioned": "Yup but don't spam it please" if role.mentionable == True else ("Nope" if role.mentionable == False else "I dunno"),
+                    "It shown in member list?": "Ye" if role.hoist == True else ("Nuh uh" if role.hoist == False else "I dunno"),
+                    "Position": role.position or "IDK",
+                }
 
+                e = discord.Embed(title=f"Information for <@{role.id}>")
+
+                for key,value in temp1.items():
+                    e.add_field(
+                        name=key,
+                        value=value,
+                        inline=True
+                    )
+
+                if role.display_icon and isinstance(role.display_icon, discord.Asset):
+                    e.set_thumbnail(url=role.display_icon.url)
+                
+                await ctx.send(embed=e)
+            else:
+                await ctx.send("User not found!")
+        except Exception as e:
+            await ctx.send(f"Error! {e} 3:")
+            logger.error(f"Error: {e}")
 
     @commands.hybrid_command(name="dm",description="DMs to a member")
     @commands.has_permissions(manage_permissions=True,manage_messages=True)
