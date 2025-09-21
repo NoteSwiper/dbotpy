@@ -39,6 +39,14 @@ class Converters(commands.Cog):
             await ctx.reply(f"<@{ctx.author.id}>: {stuff.base64_decode(text)}")
         except Exception as e:
             await ctx.reply(f"Error: {e} 3:")
+    
+    @commands.hybrid_command(name="mmphify", description="muffles your response")
+    @app_commands.describe(text="Message to be MMMPHHHH-ified")
+    async def muffle(self, ctx: commands.Context, text: str):
+        try:
+            await ctx.reply(stuff.muffle(text))
+        except Exception as e:
+            await ctx.reply(f"Error: {e} 3:")
 
 async def setup(bot):
     await bot.add_cog(Converters(bot))

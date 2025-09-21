@@ -311,7 +311,23 @@ class Management(commands.Cog):
             embed.add_field(name=key,value=value,inline=True)
         
         await ctx.send(embed=embed)
-
+    
+    @commands.hybrid_command(name="latest_commit_data", description="Shows latest commit message and hash for this")
+    async def get_commitdata(self, ctx: commands.Context):
+        temp1 = {
+            'Commit Hash': commit_hash,
+            'Commit Message': last_commit_message,
+        }
+        
+        e = discord.Embed(title="Current git information", url="https://github.com/NoteSwiper/dbotpy")
+        
+        for item, value in temp1.items():
+            e.add_field(name=item,value=value)
+        
+        e.set_footer(text="The bot is open-source. Click to this embed to access the site which is published :3")
+        
+        await ctx.reply(embed=e)
+    
     @commands.hybrid_command(name="hi",description="replys as hi")
     async def hi(self, ctx: commands.Context):
         await ctx.send("Hi")
