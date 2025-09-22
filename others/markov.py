@@ -1,6 +1,6 @@
 import markovify
 
-with open("./others/test.txt") as f:
+with open("./others/markov.txt") as f:
     text = f.read()
 
 model = markovify.Text(text, state_size=2)

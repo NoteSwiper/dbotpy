@@ -14,7 +14,6 @@ import atexit
 import time
 import discord
 import pytz
-import uwuipy
 import distro
 import ollama
 import aioconsole
@@ -122,7 +121,6 @@ async def check_inactivity():
             print("Bot has been inactive.")
             logger.debug("Bot has been inactive.")
 
-uwu = uwuipy.Uwuipy(power=4,action_chance=0,stutter_chance=0.025,face_chance=0.001)
 
 # last existance c139a7df8e73d7609ee20aeeee0cc274733dbe60
 

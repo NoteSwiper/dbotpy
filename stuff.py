@@ -9,7 +9,6 @@ import discord
 from discord.ext import tasks
 import ollama
 from profanityfilter import ProfanityFilter
-from uwuipy import Uwuipy
 import logging
 import logging.handlers
 import dotenv
