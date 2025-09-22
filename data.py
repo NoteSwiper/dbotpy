@@ -182,3 +182,8 @@ very_freaky = [
 ]
 
 alphabet_masks = "abcdefghijklmnopqrstuvwxyz"
+
+VoiceEngineType = {
+    'Google': 'gtts',
+    'eSpeak': 'espeak',
+}

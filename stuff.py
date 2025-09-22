@@ -1,12 +1,15 @@
 import datetime
+from io import BytesIO
 import subprocess
 import json
 import os
 import random
 import sqlite3
+import sys
 import unicodedata
 import discord
 from discord.ext import tasks
+from matplotlib import streamplot
 import ollama
 from profanityfilter import ProfanityFilter
 import logging
@@ -460,3 +463,17 @@ def get_latest_commit_message():
     except FileNotFoundError:
         logger.error("git command not found")
         return None
+
+def espeak_to_bytesio(text: str) -> BytesIO:
+    try:
+        command = ['espeak', '-w', '-', text]
+        result = subprocess.run(command, capture_output=True, check=True)
+        abuffer = BytesIO(result.stdout)
+        
+        abuffer.seek(0)
+        
+        return abuffer
+    except FileNotFoundError:
+        logger.error("Error: 'espeak' not found.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing espeak: {e}", file=sys.stderr)

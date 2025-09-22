@@ -1,18 +1,25 @@
 from datetime import UTC, datetime, timedelta
+from enum import Enum
 import time
 import io
 import os
 import platform
 import random
+from typing import Optional
 import discord
 from discord.ext import commands
 from discord import app_commands
 import distro
 from gtts import gTTS
+import data
 from logger import logger
 import stuff
 
 from main import handled_messages, INACTIVITY_THRESHOLD, session_uuid, commit_hash, last_commit_message, last_interaction, namesignature, start_time
+
+class SpeakEngineType(Enum):
+    GOOGLE = 0
+    ESPEAK = 1
 
 class Management(commands.Cog):
     def __init__(self, bot):
@@ -247,8 +254,15 @@ class Management(commands.Cog):
             await ctx.reply(f"Failed to send announce: {e}", ephemeral=True)
             logger.error(f"Error: {e}")
     
+    async def talkengine_autocomplete(self, ctx: discord.Interaction, current: str):
+        choices = [
+            app_commands.Choice(name=key, value=id)
+            for key, id in data.VoiceEngineType.items() if current.lower() in key.lower()
+        ]
+        return choices[:3]
+    
     @commands.hybrid_command(name="send_tts", description="Generates a speech audio")
-    async def talk(self, ctx: commands.Context, text: str):
+    async def talk(self, ctx: commands.Context, text: str, engine: Optional[app_commands.Choice[str]], lang: str = "en"):
         await ctx.defer()
         
         abuffer = io.BytesIO()

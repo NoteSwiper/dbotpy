@@ -5,12 +5,14 @@ import os
 import sqlite3
 import discord
 import markovify
+import profanityfilter
 import pytz
 from dotenv import load_dotenv
 from datetime import datetime, UTC
 from discord.ext import commands
 from discord import app_commands
 
+from others import censor
 import stuff
 import data
 
@@ -227,7 +229,15 @@ class Silly(commands.Cog):
         
         model = markovify.Text(text, state_size=3)
         
-        await ctx.reply(model.make_sentence())
+        result = model.make_sentence()
+        
+        pf = profanityfilter.ProfanityFilter()
+        
+        result = pf.censor(result)
+        
+        result = censor.censor(result)
+        
+        await ctx.reply(result)
     
 async def setup(bot):
     await bot.add_cog(Silly(bot))
