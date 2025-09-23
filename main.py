@@ -3,6 +3,7 @@ import platform
 import asyncio
 import random
 import json
+import traceback
 from typing import Optional
 import uuid
 import os
@@ -30,6 +31,7 @@ from profanityfilter import ProfanityFilter
 import stuff
 import data
 import help_command
+import censor
 
 from logger import logger
 
@@ -147,6 +149,7 @@ async def on_message(message: discord.Message):
                 return
 
             if message.content.startswith("pox!"):
+                logger.info(f"{message.author.display_name} ({message.author.name}) initiated: {message.content.replace(f"<@{bot.user.id}>",'').replace(f'pox!','')}")
                 await bot.process_commands(message)
             else:
                 await message.reply(prompt)
@@ -199,6 +202,7 @@ async def on_message(message: discord.Message):
 
     if message.content.startswith("pox!"):
         handled_messages += 1
+        logger.info(f"{message.author.display_name} ({message.author.name}) initiated: {message.content.replace(f'pox!','')}")
         await bot.process_commands(message)
     
     #if message.author.id in uwuify_flags or message.author.id == bot.owner_id:
@@ -210,7 +214,13 @@ async def on_message(message: discord.Message):
 
 @bot.event
 async def on_command_error(ctx: commands.Context, e: commands.CommandError):
+    logger.exception(f"{e}: {"\n".join(traceback.format_exception(e))}")
     await ctx.send(f"BLARGGHHH- {e}- ughhhh... 3:")
+
+@bot.event
+async def on_interaction(inter: discord.Interaction):
+    if inter.type == discord.InteractionType.application_command:
+        logger.info(f"{inter.user.display_name} ({inter.user.name}) interaction with: {inter.command.name if inter.command else "Unknown Command"}, Failed: {inter.command_failed}")
 
 # last existance: cfcde1630a2e6d01b2374c42122f39477199e550
 

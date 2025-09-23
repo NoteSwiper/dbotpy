@@ -6,6 +6,7 @@ import os
 import random
 import sqlite3
 import sys
+import time
 import unicodedata
 import discord
 from discord.ext import tasks
@@ -480,15 +481,16 @@ def espeak_to_bytesio(text: str) -> BytesIO|None:
         print(f"Error executing espeak: {e}", file=sys.stderr)
         return None
 
-def approach_target(target: float):
-    current = random.uniform(target-1,target+1)
+def approach_target(target: float,max_iterations: int = 125, x: float = 1.75,current_range:tuple = (-5,5),step_varience: tuple = (.5,2)):
+    cmin,cmax = current_range
+    current = random.uniform(target+cmin,target+cmax)
     history = [current]
     iterations = 0
     
-    while  iterations < 50:
+    while abs((target - current)) > 0.25 or iterations < max_iterations:
         diff = target - current
-        
-        step = diff*random.uniform(0.1,0.9)*3.5
+        smin,smax = step_varience
+        step = diff*random.uniform(smin,smax)*x
         current+= step
         
         history.append(current)
@@ -500,3 +502,35 @@ def clamp(n:int,min:int,max:int):
     if n < min: return min
     elif n > max: return max
     else: return n
+def clamp_f(n:float,min:float,max:float):
+    if n < min: return min
+    elif n > max: return max
+    else: return n
+
+def get_markov_dataset(name: str = "2"):
+    if not os.path.exists(f"./markov-texts/{name}.txt"):
+        logger.error("The file not found")
+        return None
+    with open(f"./markov-texts/{name}.txt", 'r') as f:
+        line = f.read()
+    
+    lines = line.split("\n")
+    
+    return lines
+
+def get_latency_from_uhhh_time(interval: float = 1, iterations: int = 2):
+    results = []
+    
+    last = None
+    
+    for i in range(iterations):
+        current = datetime.datetime.now()
+        
+        if last:
+            delay = (current - last)
+            results.append(delay.microseconds)
+        
+        last = current
+        time.sleep(interval/1000)
+    
+    return results

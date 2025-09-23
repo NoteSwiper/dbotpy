@@ -14,7 +14,7 @@ from datetime import datetime, UTC
 from discord.ext import commands
 from discord import app_commands
 
-from others import censor
+import censor
 import stuff
 import data
 
@@ -224,28 +224,80 @@ class Silly(commands.Cog):
         
         await ctx.reply(embed=embed)
     
-    @commands.hybrid_command(name="markov_test", description="don't use this cuz including NSFW words like c-")
-    async def markv(self, ctx: commands.Context):
-        with open("./others/markov.txt") as f:
-            text = f.read()
+    @commands.hybrid_command(name="markov", description="Generates random lines with Markov-chain")
+    @app_commands.describe(amount="Times to generate, up to 16 iterations (lines).")
+    async def markv(self, ctx: commands.Context, amount: Optional[int]):
+        await ctx.defer()
+        amount = stuff.clamp(amount or 1, 1, 16)
+        text2 = stuff.get_markov_dataset("2")
+        
+        if not text2:
+            await ctx.reply("Unexcepted error occured! 3:")
+            return
+        
+        text = "\n".join(text2)
         
         model = markovify.Text(text, state_size=3)
         
-        result = model.make_sentence()
+        results = [model.make_sentence() for _ in range(amount)]
         
         pf = profanityfilter.ProfanityFilter()
         
-        result = pf.censor(result)
+        e = discord.Embed(title="Generated lines")
         
-        result = censor.censor(result)
+        for i,result in enumerate(results):
+            if not result:
+                while True:
+                    result = model.make_sentence()
+                    if result and not result in text2:
+                        break
+            result = pf.censor(result)
+            result = censor.censor(result)
+            
+            e.add_field(name=f"Line {i+1}",value=result, inline=False)
         
-        await ctx.reply(result)
+        e.set_footer(text="Please be aware about the response may includes sensitive expressions, harmful expressions and an expression that may affect to the humans.")
+        await ctx.reply(embed=e)
+    
+    @commands.hybrid_command(name="anomaly_markov", description="Generates SCP-like anomaly with Markov-chain")
+    @app_commands.describe(amount="Times to generate, up to 16 iterations (lines).")
+    async def markv_abnormality(self, ctx: commands.Context, amount: Optional[int]):
+        await ctx.defer()
+        amount = stuff.clamp(amount or 1, 1, 16)
+        text2 = stuff.get_markov_dataset("1")
+        
+        if not text2:
+            await ctx.reply("Unexcepted error occured! 3:")
+            return
+        
+        text = "\n".join(text2)
+        
+        model = markovify.Text(text, state_size=3)
+        
+        results = [model.make_sentence() for _ in range(amount)]
+        
+        pf = profanityfilter.ProfanityFilter()
+        
+        e = discord.Embed(title="Generated lines")
+        
+        for i,result in enumerate(results):
+            if not result:
+                while True:
+                    result = model.make_sentence()
+                    if result and not result in text2:
+                        break
+            result = pf.censor(result)
+            result = censor.censor(result)
+            
+            e.add_field(name=f"Line {i+1}",value=result, inline=False)
+        await ctx.reply(embed=e)
     
     @commands.hybrid_command(name="targetclose", description="Target Closing Algorithm")
     async def targetclose(self, ctx: commands.Context, target_value: Optional[float], concurrents: Optional[int]):
         conc = stuff.clamp(concurrents or 10, 1, 20)
         histories = [stuff.approach_target(target_value or 20) for _ in range(conc)]
         
+        plt.style.use('dark_background')
         plt.figure(figsize=(12,8))
         for i, his in enumerate(histories):
             plt.plot(his, label=f"Attempt {i+1}")
@@ -256,6 +308,7 @@ class Silly(commands.Cog):
         plt.ylabel("Value")
         plt.legend(loc='lower right')
         plt.grid(True)
+        plt.tight_layout()
         
         buffer = BytesIO()
         
@@ -270,10 +323,47 @@ class Silly(commands.Cog):
         e = discord.Embed(title="Results with 'Target Close Algorithm'")
         for i,hist in enumerate(histories):
             e.add_field(name=f"Attempt #{i+1}",value=f"Length: {round(len(hist))}, Vx: \"{round(max(hist))},{round(min(hist))},{round(sum(hist)/len(hist))}\"")
+        
         e.set_image(url="attachment://output.png")
         if file and e:
             await ctx.reply(file=file, embed=e)
+    
+    @commands.hybrid_command(name="computer_latency",description="Calculates hosted computer's latency")
+    async def checklat(self, ctx: commands.Context, delay: Optional[float]):
+        delay = stuff.clamp_f(delay or 10, 10,1000)/10
+        delay2 = delay / 1000
+        iterations = int(1/delay2)
         
+        results = stuff.get_latency_from_uhhh_time(delay, iterations)
+
+        plt.style.use('dark_background')
+        plt.figure(figsize=(12,8))
+
+        plt.plot(results,linestyle='-', color='b', label="Estimated")
+
+        plt.axhline(y=(sum(results)/len(results)), color='r', linestyle='--', label="Avg.")
+        plt.title(f"Computer Latency on {datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}")
+        plt.xlabel("Steps")
+        plt.ylabel("Milliseconds")
+        plt.legend(loc='lower right')
+        plt.grid(True)
+        plt.tight_layout()
+        
+        buffer = BytesIO()
+        
+        plt.savefig(buffer, format='png')
+        
+        buffer.seek(0)
+        
+        plt.close()
+        
+        file = discord.File(fp=buffer, filename='output.png')
+        
+        e = discord.Embed(title="Results with 'Target Close Algorithm'")
+        
+        e.set_image(url="attachment://output.png")
+        if file and e:
+            await ctx.reply(file=file, embed=e)
         
 async def setup(bot):
     await bot.add_cog(Silly(bot))
