@@ -495,3 +495,8 @@ def approach_target(target: float):
         iterations += 1
     
     return history
+
+def clamp(n:int,min:int,max:int):
+    if n < min: return min
+    elif n > max: return max
+    else: return n

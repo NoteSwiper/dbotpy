@@ -242,15 +242,16 @@ class Silly(commands.Cog):
         await ctx.reply(result)
     
     @commands.hybrid_command(name="targetclose", description="Target Closing Algorithm")
-    async def targetclose(self, ctx: commands.Context, target_value: Optional[float]):
-        histories = [stuff.approach_target(target_value or 20) for _ in range(10)]
+    async def targetclose(self, ctx: commands.Context, target_value: Optional[float], concurrents: Optional[int]):
+        conc = stuff.clamp(concurrents or 10, 1, 20)
+        histories = [stuff.approach_target(target_value or 20) for _ in range(conc)]
         
         plt.figure(figsize=(12,8))
         for i, his in enumerate(histories):
             plt.plot(his, label=f"Attempt {i+1}")
         
         plt.axhline(y=target_value or 20, color='r', linestyle='--', label="Target")
-        plt.title(f"Target close algorithm on {datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}")
+        plt.title(f"Target close algorithm on {datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}, with {conc} parallels")
         plt.xlabel("Steps")
         plt.ylabel("Value")
         plt.legend(loc='lower right')
@@ -268,7 +269,7 @@ class Silly(commands.Cog):
         
         e = discord.Embed(title="Results with 'Target Close Algorithm'")
         for i,hist in enumerate(histories):
-            e.add_field(name=f"Attempt #{i+1}",value=f"Length: {len(hist)}, Vx: \"{max(hist)},{min(hist)},{sum(hist)/len(hist)}\"")
+            e.add_field(name=f"Attempt #{i+1}",value=f"Length: {round(len(hist))}, Vx: \"{round(max(hist))},{round(min(hist))},{round(sum(hist)/len(hist))}\"")
         e.set_image(url="attachment://output.png")
         if file and e:
             await ctx.reply(file=file, embed=e)
