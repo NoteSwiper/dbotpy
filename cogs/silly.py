@@ -1,10 +1,12 @@
 import asyncio
+from io import BytesIO
 import random
 from typing import Optional
 import os
 import sqlite3
 import discord
 import markovify
+from matplotlib import pyplot as plt
 import profanityfilter
 import pytz
 from dotenv import load_dotenv
@@ -222,7 +224,7 @@ class Silly(commands.Cog):
         
         await ctx.reply(embed=embed)
     
-    @commands.hybrid_command(name="markov_test", description="yes")
+    @commands.hybrid_command(name="markov_test", description="don't use this cuz including NSFW words like c-")
     async def markv(self, ctx: commands.Context):
         with open("./others/markov.txt") as f:
             text = f.read()
@@ -239,5 +241,38 @@ class Silly(commands.Cog):
         
         await ctx.reply(result)
     
+    @commands.hybrid_command(name="targetclose", description="Target Closing Algorithm")
+    async def targetclose(self, ctx: commands.Context, target_value: Optional[float]):
+        histories = [stuff.approach_target(target_value or 20) for _ in range(10)]
+        
+        plt.figure(figsize=(12,8))
+        for i, his in enumerate(histories):
+            plt.plot(his, label=f"Attempt {i+1}")
+        
+        plt.axhline(y=target_value or 20, color='r', linestyle='--', label="Target")
+        plt.title(f"Target close algorithm on {datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}")
+        plt.xlabel("Steps")
+        plt.ylabel("Value")
+        plt.legend(loc='lower right')
+        plt.grid(True)
+        
+        buffer = BytesIO()
+        
+        plt.savefig(buffer, format='png')
+        
+        buffer.seek(0)
+        
+        plt.close()
+        
+        file = discord.File(fp=buffer, filename='output.png')
+        
+        e = discord.Embed(title="Results with 'Target Close Algorithm'")
+        for i,hist in enumerate(histories):
+            e.add_field(name=f"Attempt #{i+1}",value=f"Length: {len(hist)}, Vx: \"{max(hist)},{min(hist)},{sum(hist)/len(hist)}\"")
+        e.set_image(url="attachment://output.png")
+        if file and e:
+            await ctx.reply(file=file, embed=e)
+        
+        
 async def setup(bot):
     await bot.add_cog(Silly(bot))

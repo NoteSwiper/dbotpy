@@ -2,26 +2,32 @@ import time
 import random
 import matplotlib.pyplot as plt
 
-target = random.uniform(20,50)
-current = random.uniform(-50,50)
-
-history = []
-
-while abs(current - target) > 0.1:
-    diff = target - current
-    step = diff * random.uniform(0.1,0.9)
-    current += step
+def approach_target(target: float):
+    current = random.uniform(target-1,target+1)
+    history = [current]
+    iterations = 0
     
-    history.append(current)
+    while  iterations < 50:
+        diff = target - current
+        
+        step = diff*random.uniform(0.1,0.9)*3.5
+        current+= step
+        
+        history.append(current)
+        iterations += 1
     
-    time.sleep(0.5)
+    return history
 
-plt.figure(figsize=(10,6))
-plt.plot(history, label="Current")
-plt.axhline(y=target, color='r', label="target")
-plt.title("Variance")
-plt.xlabel("Steps")
-plt.ylabel("Value")
-plt.legend()
+histories = [approach_target(20) for _ in range(10)]
+
+plt.figure(figsize=(12,8))
+for i, his in enumerate(histories):
+    plt.plot(his, label=f'Attempt {i+1}')
+
+plt.axhline(y=20, color='r', label="Target")
+plt.title("Varience")
+plt.xlabel('Steps')
+plt.ylabel('Value')
+plt.legend(loc='lower right')
 plt.grid(True)
-plt.savefig("output.png")
+plt.savefig('output.png')

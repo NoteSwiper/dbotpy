@@ -464,7 +464,7 @@ def get_latest_commit_message():
         logger.error("git command not found")
         return None
 
-def espeak_to_bytesio(text: str) -> BytesIO:
+def espeak_to_bytesio(text: str) -> BytesIO|None:
     try:
         command = ['espeak', '-w', '-', text]
         result = subprocess.run(command, capture_output=True, check=True)
@@ -475,5 +475,23 @@ def espeak_to_bytesio(text: str) -> BytesIO:
         return abuffer
     except FileNotFoundError:
         logger.error("Error: 'espeak' not found.")
+        return None
     except subprocess.CalledProcessError as e:
         print(f"Error executing espeak: {e}", file=sys.stderr)
+        return None
+
+def approach_target(target: float):
+    current = random.uniform(target-1,target+1)
+    history = [current]
+    iterations = 0
+    
+    while  iterations < 50:
+        diff = target - current
+        
+        step = diff*random.uniform(0.1,0.9)*3.5
+        current+= step
+        
+        history.append(current)
+        iterations += 1
+    
+    return history
