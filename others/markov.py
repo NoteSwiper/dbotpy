@@ -3,7 +3,7 @@ import markovify
 
 data = []
 
-with open("./others/markov.txt") as f:
+with open("./markov-texts/1.txt") as f:
     text = f.read()
     data = f.readlines()
 

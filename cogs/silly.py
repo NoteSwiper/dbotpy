@@ -3,7 +3,7 @@ from io import BytesIO
 import random
 from typing import Optional
 import os
-import sqlite3
+import aiosqlite
 import discord
 import markovify
 from matplotlib import pyplot as plt
@@ -95,29 +95,28 @@ class Silly(commands.Cog):
     
     @commands.hybrid_command(name="poxleaderboard",description="Shows leaderboard in server who said pox for many times")
     async def poxleaderboard(self, ctx: commands.Context):
-        conn = sqlite3.connect("leaderboard.db")
-        cursor = conn.cursor()
-    
-        cursor.execute("SELECT user_id, pox_count FROM leaderboard ORDER BY pox_count DESC LIMIT 32")
-        leaderboard_data = cursor.fetchall()
-        conn.close()
-        desc = ""
-        if len(leaderboard_data) == 0:
-            desc = "No one has said pox yet 3:"
+        if self.bot.db_connection:
+            async with self.bot.db_connection.execute("SELECT user_id, pox_count FROM leaderboard ORDER BY pox_count DESC LIMIT 32") as cursor:
+                lbdata = await cursor.fetchall()
+            
+            desc = ""
+            
+            if len(lbdata) == 0:
+                desc = "No one has said \"pox\" yet 3:"
+            else:
+                for i, (id,count) in enumerate(lbdata,1):
+                    desc += f"{i}. <@{id}>: {count} times!\n"
+            
+            e = discord.Embed(
+                title="**Pox Leaderboard**",
+                description=desc,
+                color=0xFFA500,
+            )
+            e.set_footer(text="The leaderboard database were stored in host computer.")
+            
+            await ctx.reply(embed=e)
         else:
-            for i , (id,count) in enumerate(leaderboard_data,1):
-                desc += f"{i}. <@{id}>: {count} times!\n"
-        
-        desc += "\nData were stored in BOT Server."
-        
-        embed = discord.Embed(
-            title="**Pox Leaderboard**",
-            description=desc,
-            color=0xFFA500
-        )
-    
-        await ctx.send(embed=embed)
-    
+            await ctx.reply("sowwy bot has no connection with Database... 3:")
     @commands.hybrid_command(name="ispoxactive",description="Check if pox is active")
     async def ispoxactive(self, ctx: commands.Context):
         now = datetime.now(pytz.timezone('Asia/Tokyo'))

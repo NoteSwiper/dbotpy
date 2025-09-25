@@ -1,37 +1,16 @@
 import subprocess
-import platform
-import asyncio
-import random
-import json
-import traceback
-from typing import Optional
 import uuid
-import os
-import logging
-import logging.handlers
-import base64
-import sqlite3
-import atexit
 import time
 import discord
-import pytz
-import distro
-import ollama
-import aioconsole
-import io
 
-from gtts import gTTS
 from dotenv import load_dotenv
-from datetime import datetime, UTC,timedelta
+from datetime import datetime, UTC
 from discord.ext import commands
-from discord import app_commands
-from discord.ext import tasks
 from profanityfilter import ProfanityFilter
 
 import stuff
-import data
 import help_command
-import censor
+from bot import PoxBot
 
 from logger import logger
 
@@ -75,10 +54,8 @@ INACTIVITY_THRESHOLD = 300
 
 WS_TOKEN = "3yc"
 
-bot = commands.AutoShardedBot(intents=intents, command_prefix=commands.when_mentioned_or("pox!"), help_command=help_command.MyHelpCommand(), owner_id=1321324137850994758)
+bot = PoxBot(intents=intents, command_prefix=commands.when_mentioned_or("pox!"), help_command=help_command.MyHelpCommand(), owner_id=1321324137850994758)
 tree = bot.tree
-
-exts = ['management']
 
 target_id = 1413813193616261135
 target_channel = None
@@ -89,10 +66,7 @@ last_interaction = datetime.now(UTC)
 namesignature = stuff.generate_namesignature()
 last_commit_message = stuff.get_latest_commit_message()
 
-# last existance: cfcde1630a2e6d01b2374c42122f39477199e550
-
-uwuify_flags = []
-
+"""
 @bot.event
 async def on_ready():
     global target_channel, target_id,last_channel_id
@@ -221,6 +195,7 @@ async def on_command_error(ctx: commands.Context, e: commands.CommandError):
 async def on_interaction(inter: discord.Interaction):
     if inter.type == discord.InteractionType.application_command:
         logger.info(f"{inter.user.display_name} ({inter.user.name}) interaction with: {inter.command.name if inter.command else "Unknown Command"}, Failed: {inter.command_failed}")
+"""
 
 # last existance: cfcde1630a2e6d01b2374c42122f39477199e550
 

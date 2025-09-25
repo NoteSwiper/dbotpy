@@ -284,8 +284,11 @@ class Management(commands.Cog):
 
     @commands.hybrid_command(name="info",description="Shows information for the bot")
     async def info(self, ctx: commands.Context):
-        global session_uuid,handled_messages,target_channel
         embed = discord.Embed(title="Info of myself and others stuff :3")
+        session_uuid = self.bot.session_uuid or "Unknown"
+        commit_hash = self.bot.commit_hash or "Unknown hash"
+        last_commit_message = self.bot.last_commit or "No description"
+        namesignature = self.bot.name_signature or "Unknown"
         datacf = {
             'Session UUID': str(session_uuid),
             'Version': f"Python {platform.python_version()}, discord.py {discord.__version__}, " + (f"(git+{commit_hash} {last_commit_message}) ({namesignature})" if commit_hash else "Unknown"),
@@ -297,7 +300,7 @@ class Management(commands.Cog):
             '(your) Guild members': "Unknown",
             'NSFW?': "Maybe, s****-",
             'Is it unrelated?': "yeah!!!!",
-            "Status": "Sleeping" if (datetime.now(UTC).timestamp() - last_interaction.timestamp()) >= INACTIVITY_THRESHOLD else "Wake",
+            #"Status": "Sleeping" if (datetime.now(UTC).timestamp() - last_interaction.timestamp()) >= INACTIVITY_THRESHOLD else "Wake",
             "Nyan Cat": "https://gist.github.com/aba00c9a1c92d226f68e8ad8ba1e0a40",
             "Laugh": "bah bah",
         }
@@ -328,6 +331,8 @@ class Management(commands.Cog):
     
     @commands.hybrid_command(name="latest_commit_data", description="Shows latest commit message and hash for this")
     async def get_commitdata(self, ctx: commands.Context):
+        commit_hash = self.bot.commit_hash or "Unknown hash"
+        last_commit_message = self.bot.last_commit or "No description"
         temp1 = {
             'Commit Hash': commit_hash,
             'Commit Message': last_commit_message,

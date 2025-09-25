@@ -1,0 +1,111 @@
+import datetime
+import os
+import subprocess
+import traceback
+import uuid
+import discord
+from discord.ext import commands
+import stuff
+import data
+import aiosqlite
+from logger import logger
+
+class PoxBot(commands.AutoShardedBot):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args,**kwargs)
+        
+        self.launch_time = datetime.datetime.now(datetime.UTC)
+        self.handled_messages = 0
+        self.db_connection = None
+        self.commit_hash = ""
+        self.session_uuid = uuid.uuid4()
+        self.name_signature = stuff.generate_namesignature()
+        self.last_commit = stuff.get_latest_commit_message()
+    
+    async def setup_hook(self):
+        self.db_connection = await aiosqlite.connect("./leaderboard.db")
+        logger.debug("Database initialized")
+        try:
+            output = subprocess.run(['git','rev-parse','--short','HEAD'], capture_output=True, text=True, check=True)
+            self.commit_hash = output.stdout.strip()
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Error occured: {e}")
+        except FileNotFoundError:
+            logger.error("Git command not found. make sure to check if Git is installed.")
+    
+    async def on_ready(self):
+        await self.change_presence(activity=discord.CustomActivity(name="meow~ :3"))
+        stuff.setup_database("./leaderboard.db")
+        
+        for fname in os.listdir('./cogs'):
+            if fname.endswith('.py'):
+                await self.load_extension(f'cogs.{fname[:-3]}')
+        
+        await self.tree.sync()
+    
+    async def on_message(self,message: discord.Message):
+        self.handled_messages += 1
+        
+        if message.author == self.user or message.mention_everyone: return
+        
+        if self.user:
+            if self.user.mentioned_in(message) == True or self.user in message.mentions:
+                prompt = message.content.replace(f'<@{self.user.id}>','').strip()
+                if not prompt: return
+                
+                if message.content.startswith("pox!"):
+                    logger.info(f"{message.author.id}, {prompt.replace('pox!','')}")
+                    await self.process_commands(message)
+                else:
+                    await message.reply(prompt)
+        else:
+            logger.error("Couldn't find 'bot.user'")
+        
+        pox_count = 0
+        separated_words = message.content.lower().split(" ")
+        
+        if self.db_connection and self.user:
+            user_id = str(message.author.id)
+            if separated_words:
+                if self.db_connection:
+                    async with self.db_connection.execute("SELECT amount FROM poxcoins WHERE user_id = ?", (user_id,)) as cursor:
+                        result = await cursor.fetchone()
+                    
+                    if result:
+                        new = result[0] + len(separated_words)
+                        await self.db_connection.execute("UPDATE poxcoins SET amount = ? WHERE user_id = ?", (new, user_id))
+                    else:
+                        await self.db_connection.execute("INSERT INTO poxcoins (user_id, amount) VALUES (?, ?)", (user_id, len(separated_words)))
+            
+            pox_count = len([item for item in separated_words if "pox" in item])
+            async with self.db_connection.execute("SELECT pox_count FROM leaderboard WHERE user_id = ?", (user_id,)) as cursor:
+                result = await cursor.fetchone()
+            
+            if result:
+                new = result[0] + pox_count
+                await self.db_connection.execute("UPDATE leaderboard SET pox_count = ? WHERE user_id = ?", (new, user_id))
+            else:
+                await self.db_connection.execute("INSERT INTO leaderboard (user_id, pox_count) VALUES (?, ?)", (user_id, pox_count))
+        
+        if message.content.startswith("pox!"):
+            self.handled_messages += 1
+            logger.info(f"{message.author.id}, {message.content.replace('pox!','')}")
+            await self.process_commands(message)
+    
+    async def on_command_error(self,ctx: commands.Context, e: commands.CommandError):
+        logger.exception(f"{e}: {"\n".join(traceback.format_exception(e))}")
+        await ctx.reply(f"{e} 3:")
+    
+    async def on_interaction(self,inter: discord.Interaction):
+        if inter.type == discord.InteractionType.application_command:
+            logger.info(f"{inter.user.display_name}, {inter.command.name if inter.command else "Unknown"}, {inter.command_failed}")
+    
+    async def close(self):
+        if self.db_connection:
+            await self.db_connection.close()
+            logger.debug("Database closed")
+        await super().close()
+                
+    def get_launch_time(self) -> datetime.datetime:
+        return self.launch_time
+
