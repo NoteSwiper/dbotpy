@@ -1,13 +1,18 @@
-import logging
-import logging.handlers
+import json
+from logging import getLogger, DEBUG, INFO, Formatter
+from logging.handlers import RotatingFileHandler
+from logging.config import dictConfig
+logger = getLogger('discord')
+logger.setLevel(DEBUG)
 
+with open('conf/logging.json', 'r') as f:
+    log_conf = json.load(f)
 
-logger = logging.getLogger('discord')
-logger.setLevel(logging.DEBUG)
+dictConfig(log_conf)
 
-logging.getLogger('discord.http').setLevel(logging.INFO)
+"""getLogger('discord.http').setLevel(INFO)
 
-handler = logging.handlers.RotatingFileHandler(
+handler = RotatingFileHandler(
     filename="logs/discord.log",
     encoding='utf-8',
     maxBytes=32*1024*1024,
@@ -15,7 +20,7 @@ handler = logging.handlers.RotatingFileHandler(
 )
 
 dt_fmt = '%Y-%m-%d %H:%M:%S'
-formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+formatter = Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
 
 handler.setFormatter(formatter)
-logger.addHandler(handler)
+logger.addHandler(handler)"""
