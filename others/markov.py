@@ -3,7 +3,14 @@ import markovify
 
 data = []
 
-with open("./markov-texts/1.txt") as f:
+class poopers(markovify.Text):
+    def word_split(self, sentence):
+        return list(sentence)
+    
+    def word_join(self, words):
+        return "".join(words)
+
+with open("./markov-texts/2.txt") as f:
     text = f.read()
     data = f.readlines()
 
