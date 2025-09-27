@@ -8,16 +8,14 @@ import sqlite3
 import sys
 import time
 import unicodedata
-import discord
-from discord.ext import tasks
-from matplotlib import streamplot
-import ollama
 from profanityfilter import ProfanityFilter
 import logging
 import logging.handlers
 import dotenv
 import re
 import base64
+
+from voxpopuli import Voice
 
 import data
 
@@ -36,6 +34,8 @@ formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', 
 
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
+voice = Voice(lang="en")
 
 def get_bot_token():
     return os.getenv('TOKEN')
@@ -465,21 +465,9 @@ def get_latest_commit_message():
         logger.error("git command not found")
         return None
 
-def espeak_to_bytesio(text: str) -> BytesIO|None:
-    try:
-        command = ['espeak', '-w', '-', text]
-        result = subprocess.run(command, capture_output=True, check=True)
-        abuffer = BytesIO(result.stdout)
-        
-        abuffer.seek(0)
-        
-        return abuffer
-    except FileNotFoundError:
-        logger.error("Error: 'espeak' not found.")
-        return None
-    except subprocess.CalledProcessError as e:
-        print(f"Error executing espeak: {e}", file=sys.stderr)
-        return None
+def espeak_to_bytesio(text: str):
+    sbuffer = voice.to_audio(text)
+    return sbuffer
 
 def approach_target(target: float,max_iterations: int = 125, x: float = 1.75,current_range:tuple = (-5,5),step_varience: tuple = (.5,2)):
     cmin,cmax = current_range

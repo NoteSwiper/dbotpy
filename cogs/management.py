@@ -267,8 +267,11 @@ class Management(commands.Cog):
         
         abuffer = io.BytesIO()
         try:
-            tts = gTTS(text=text)
-            tts.write_to_fp(abuffer)
+            if engine == "google":
+                tts = gTTS(text=text)
+                tts.write_to_fp(abuffer)
+            elif engine == "espeak":
+                abuffer.write(stuff.espeak_to_bytesio(text))
             
             abuffer.seek(0)
         except Exception as e:

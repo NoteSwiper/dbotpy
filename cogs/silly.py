@@ -329,7 +329,7 @@ class Silly(commands.Cog):
     
     @commands.hybrid_command(name="computer_latency",description="Calculates hosted computer's latency")
     async def checklat(self, ctx: commands.Context, delay: Optional[float]):
-        delay = stuff.clamp_f(delay or 10, 10,1000)/10
+        delay = stuff.clamp_f(delay or 150, 10,1000)/10
         delay2 = delay / 1000
         iterations = int(1/delay2)
         
