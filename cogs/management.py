@@ -262,12 +262,12 @@ class Management(commands.Cog):
         return choices[:3]
     
     @commands.hybrid_command(name="send_tts", description="Generates a speech audio")
-    async def talk(self, ctx: commands.Context, text: str, engine: Optional[app_commands.Choice[str]], lang: str = "en"):
+    async def talk(self, ctx: commands.Context, text: str, engine: Optional[str], lang: str = "en"):
         await ctx.defer()
         
         abuffer = io.BytesIO()
         try:
-            if engine == "google":
+            if engine == "google" or not engine:
                 tts = gTTS(text=text)
                 tts.write_to_fp(abuffer)
             elif engine == "espeak":

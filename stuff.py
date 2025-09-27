@@ -35,7 +35,7 @@ formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', 
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-voice = Voice(lang="en")
+voice = Voice(lang="us")
 
 def get_bot_token():
     return os.getenv('TOKEN')
