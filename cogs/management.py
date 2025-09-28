@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import distro
+import edge_tts
 from gtts import gTTS
 import data
 from logger import logger
@@ -261,30 +262,6 @@ class Management(commands.Cog):
         ]
         return choices[:3]
     
-    @commands.hybrid_command(name="send_tts", description="Generates a speech audio", help="Yes sir?")
-    async def talk(self, ctx: commands.Context, text: str, engine: Optional[str], slow: Optional[bool], lang: str = "en"):
-        await ctx.defer()
-        
-        abuffer = io.BytesIO()
-        try:
-            if engine == "google" or not engine:
-                tts = gTTS(text=text, lang=(lang or "en"), slow=(slow or False))
-                tts.write_to_fp(abuffer)
-            elif engine == "espeak":
-                abuffer.write(stuff.espeak_to_bytesio(text))
-            
-            abuffer.seek(0)
-        except Exception as e:
-            await ctx.reply(f"An error occured while generating speech: {e}!")
-            return
-        
-        dfile = discord.File(abuffer, filename="speech.mp3")
-        
-        try:
-            await ctx.reply(file=dfile)
-        except Exception as e:
-            await ctx.reply(f"An error occured while sending the file: {e}")
-
     @commands.hybrid_command(name="info",description="Shows information for the bot")
     async def info(self, ctx: commands.Context):
         embed = discord.Embed(title="Info of myself and others stuff :3")
