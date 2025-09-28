@@ -21,6 +21,8 @@ class PoxBot(commands.AutoShardedBot):
         self.session_uuid = uuid.uuid4()
         self.name_signature = stuff.generate_namesignature()
         self.last_commit = stuff.get_latest_commit_message()
+        self.processed_interactions = 0
+        self.failed_interactions = 0
     
     async def setup_hook(self):
         self.db_connection = await aiosqlite.connect("./leaderboard.db")

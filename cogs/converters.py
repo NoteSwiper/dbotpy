@@ -1,6 +1,7 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
+import requests
 
 import stuff
 
@@ -47,6 +48,10 @@ class Converters(commands.Cog):
             await ctx.reply(stuff.muffle(text))
         except Exception as e:
             await ctx.reply(f"Error: {e} 3:")
+    
+
+# i will add this but not this time :(
+# https://colornames.org/search/json/?hex=FF0000
 
 async def setup(bot):
     await bot.add_cog(Converters(bot))

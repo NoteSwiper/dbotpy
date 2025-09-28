@@ -522,3 +522,20 @@ def get_latency_from_uhhh_time(interval: float = 1, iterations: int = 2):
         time.sleep(interval/1000)
     
     return results
+
+def check_string_for_hex(s):
+    hexs = set('0123456789abcdef#')
+    return all(char.lower() not in hexs for char in s)
+
+def expand_hex(s):
+    if check_string_for_hex(s):
+        if len(s) == 4 and s.startswith('#'):
+            return ''.join(c*2 for c in s[1:])
+        elif len(s) == 3:
+            return ''.join(c*2 for c in s)
+        elif len(s) == 9 and s.startswith('#'):
+            return s[1:]
+        elif len(s) == 8:
+            return s
+        else:
+            return None

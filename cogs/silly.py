@@ -105,7 +105,7 @@ class Silly(commands.Cog):
                 desc = "No one has said \"pox\" yet 3:"
             else:
                 for i, (id,count) in enumerate(lbdata,1):
-                    desc += f"{i}. <@{id}>: {count} times!\n"
+                    desc += f"{i}. <@{id}>: {int(count)} times!\n"
             
             e = discord.Embed(
                 title="**Pox Leaderboard**",
@@ -128,13 +128,13 @@ class Silly(commands.Cog):
             desc = ""
             
             if len(lbdata) == 0:
-                desc = "No one has said \"pox\" yet 3:"
+                desc = "No one has said \"any words\" yet 3:"
             else:
                 for i, (id,count) in enumerate(lbdata,1):
-                    desc += f"{i}. <@{id}>: {count} times!\n"
+                    desc += f"{i}. <@{id}>: {int(count)} times!\n"
             
             e = discord.Embed(
-                title="**Pox Leaderboard**",
+                title="**Word Leaderboard**",
                 description=desc,
                 color=0xFFA500,
             )
