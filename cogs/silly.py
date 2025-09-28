@@ -117,6 +117,33 @@ class Silly(commands.Cog):
             await ctx.reply(embed=e)
         else:
             await ctx.reply("sowwy bot has no connection with Database... 3:")
+    
+    
+    @commands.hybrid_command(name="wordleaderboard",description="Shows leaderboard in server who has yapping all times")
+    async def leaderbood(self, ctx: commands.Context):
+        if self.bot.db_connection:
+            async with self.bot.db_connection.execute("SELECT user_id, amount FROM poxcoins ORDER BY amount DESC LIMIT 32") as cursor:
+                lbdata = await cursor.fetchall()
+            
+            desc = ""
+            
+            if len(lbdata) == 0:
+                desc = "No one has said \"pox\" yet 3:"
+            else:
+                for i, (id,count) in enumerate(lbdata,1):
+                    desc += f"{i}. <@{id}>: {count} times!\n"
+            
+            e = discord.Embed(
+                title="**Pox Leaderboard**",
+                description=desc,
+                color=0xFFA500,
+            )
+            e.set_footer(text="The leaderboard database were stored in host computer.")
+            
+            await ctx.reply(embed=e)
+        else:
+            await ctx.reply("sowwy bot has no connection with Database... 3:")
+    
     @commands.hybrid_command(name="ispoxactive",description="Check if pox is active")
     async def ispoxactive(self, ctx: commands.Context):
         now = datetime.now(pytz.timezone('Asia/Tokyo'))
