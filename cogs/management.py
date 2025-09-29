@@ -16,8 +16,6 @@ import data
 from logger import logger
 import stuff
 
-from main import handled_messages, INACTIVITY_THRESHOLD, session_uuid, commit_hash, last_commit_message, last_interaction, namesignature, start_time
-
 class SpeakEngineType(Enum):
     GOOGLE = 0
     ESPEAK = 1
@@ -366,7 +364,7 @@ class Management(commands.Cog):
     @commands.hybrid_command(name="uptime", description="How long this bot is in f**king session")
     async def check_uptime(self,ctx: commands.Context):
         global start_time
-        await ctx.send("me hav been for {}..! >:3".format(stuff.get_formatted_from_seconds(round(time.time() - start_time))))
+        await ctx.send("me hav been for {}..! >:3".format(stuff.get_formatted_from_seconds(round(time.time() - self.bot.launch_time2))))
     
     @commands.hybrid_command(name="nyanbot",description="Nyan bot.")
     async def nyan_bot(self, ctx):

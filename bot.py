@@ -1,6 +1,7 @@
 import datetime
 import os
 import subprocess
+from time import time
 import traceback
 import uuid
 import discord
@@ -17,6 +18,7 @@ class PoxBot(commands.AutoShardedBot):
         super().__init__(*args,**kwargs)
         
         self.launch_time = datetime.datetime.now(datetime.UTC)
+        self.lanuch_time2 = time()
         self.handled_messages = 0
         self.db_connection = None
         self.commit_hash = ""
@@ -26,6 +28,7 @@ class PoxBot(commands.AutoShardedBot):
         self.processed_interactions = 0
         self.failed_interactions = 0
         self.gtts_cache_langs = tts_langs()
+        self.received_chunks = 0
     
     async def setup_hook(self):
         self.db_connection = await aiosqlite.connect("./leaderboard.db")

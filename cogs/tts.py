@@ -1,4 +1,7 @@
+import importlib
+import importlib.util
 from io import BytesIO
+import sys
 from typing import Optional
 import discord
 from discord.ext import commands
@@ -56,6 +59,11 @@ class TTS(commands.Cog):
     
     @ttsgroup.command(name="espeak")
     async def espeaktts(self, interaction: discord.Interaction, text: str, lang: Optional[str], slow: Optional[bool]):
+        if not 'voxpopuli' in sys.modules:
+            logger.error("voxpopuli package is not installed in this project. ignoring...")
+            await interaction.response.send_message(f"It seems the environment used in discord bot doesn't have `voxpopuli` package.")
+            return
+        
         if not lang:
             lang = "en"
         
@@ -84,6 +92,11 @@ class TTS(commands.Cog):
     
     @ttsgroup.command(name="edge-tts")
     async def edgetts(self, interaction: discord.Interaction, text: str, lang: Optional[str], slow: Optional[bool]):
+        if not "edge_tts" in sys.modules:
+            logger.error("edge_tts package is not installed in this project. ignoring...")
+            await interaction.response.send_message(f"It seems the environment used in discord bot doesn't have `edge_tts` package.")
+            return
+        
         if not lang:
             lang = "en-US-AndrewMultilingualNeural"
         
@@ -98,6 +111,7 @@ class TTS(commands.Cog):
             communicate = Communicate(text, lang)
             
             async for chunk in communicate.stream():
+                self.bot.received_chunks += 1
                 if chunk["type"] == "audio":
                     abuffer.write(chunk["data"])
             
