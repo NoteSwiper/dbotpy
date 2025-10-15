@@ -1,55 +1,98 @@
 import discord
-from discord import app_commands
+from discord import Interaction, app_commands
 from discord.ext import commands
 import requests
 
+import data
 import stuff
 
 class Converters(commands.Cog):
     def __init__(self,bot):
         self.bot = bot
     
-    @commands.hybrid_command(name="meowify",description="makes text to MEOW MEOW :'3")
+    @app_commands.command(name="meowify",description="makes text to MEOW MEOW :'3")
     @app_commands.describe(text="Text to be meowified")
-    async def meow(self, ctx: commands.Context, text: str):
+    async def meowify(self, ctx: Interaction, text: str):
+        await ctx.response.defer(thinking=True)
         try:
-            await ctx.reply(stuff.meow_phrase_weighted(text))
+            await ctx.followup.send(stuff.meow_phrase_weighted(text))
         except Exception as e:
-            await ctx.reply(f"Error occured! {e}")
+            await ctx.followup.send(f"Error occured! {e}")
     
-    @commands.hybrid_command(name="uwuify", description="same with say_uwuify, but with mention lol")
+    @app_commands.command(name="uwuify", description="same with say_uwuify, but with mention lol")
     @app_commands.describe(text="Text to be uwuified")
-    async def uwuify(self, ctx: commands.Context, text: str):
+    async def uwuify(self, ctx: Interaction, text: str):
+        if ctx.message is None:
+            await ctx.response.send_message("ctx.message is None, aborting")
+            return
+        else:
+            await ctx.response.defer(thinking=True)
+        
         try:
-            await ctx.reply(f"<@{ctx.author.id}>: {stuff.to_uwu(text)}")
+            await ctx.followup.send(f"<@{ctx.message.author.id}>: {stuff.to_uwu(text)}")
         except Exception as e:
-            await ctx.reply(f"Error: {e} 3:")
+            await ctx.followup.send(f"Error: {e} 3:")
     
-    @commands.hybrid_command(name="base64ify", description="Makes your message into base64")
+    @app_commands.command(name="base64ify", description="Makes your message into base64")
     @app_commands.describe(text="Text to be base64-ified")
-    async def base64ify(self, ctx: commands.Context, text: str):
+    async def base64ify(self, ctx: Interaction, text: str):
+        if ctx.message is None:
+            await ctx.response.send_message("ctx.message is None, aborting")
+            return
+        else:
+            await ctx.response.defer(thinking=True)
+        
         try:
-            await ctx.reply(f"<@{ctx.author.id}>: {stuff.base64_encode(text)}")
+            await ctx.followup.send(f"<@{ctx.message.author.id}>: {stuff.base64_encode(text)}")
         except Exception as e:
-            await ctx.reply(f"Error: {e} 3:")
+            await ctx.followup.send(f"Error: {e} 3:")
     
-    @commands.hybrid_command(name="un_base64ify", description="Makes your base64 message decoded")
+    @app_commands.command(name="un_base64ify", description="Makes your base64 message decoded")
     @app_commands.describe(text="Base64 to be textified")
-    async def debase64ify(self, ctx: commands.Context, text: str):
+    async def debase64ify(self, ctx: Interaction, text: str):
+        if ctx.message is None:
+            await ctx.response.send_message("ctx.message is None, aborting")
+            return
+        else:
+            await ctx.response.defer(thinking=True)
+        
         try:
-            await ctx.reply(f"<@{ctx.author.id}>: {stuff.base64_decode(text)}")
+            await ctx.followup.send(f"<@{ctx.message.author.id}>: {stuff.base64_decode(text)}")
         except Exception as e:
-            await ctx.reply(f"Error: {e} 3:")
+            await ctx.followup.send(f"Error: {e} 3:")
     
-    @commands.hybrid_command(name="mmphify", description="muffles your response")
+    @app_commands.command(name="mmphify", description="muffles your response")
     @app_commands.describe(text="Message to be MMMPHHHH-ified")
-    async def muffle(self, ctx: commands.Context, text: str):
+    async def mmphify(self, ctx: Interaction, text: str):
+        await ctx.response.defer(thinking=True)
         try:
-            await ctx.reply(stuff.muffle(text))
+            await ctx.followup.send(stuff.muffle(text))
         except Exception as e:
-            await ctx.reply(f"Error: {e} 3:")
+            await ctx.followup.send(f"Error: {e} 3:")
     
-
+    @app_commands.command(name="base7777ify", description="Base 7777 by galaxy_fl3x")
+    async def base7777ify(self, interaction: Interaction, text: str):
+        await interaction.response.defer(thinking=True)
+        splitted1 = list(data.alphabet)
+        splitted2 = list(data.base7777_key)
+        result = ""
+        for char in list(text):
+            index = splitted1.index(char)
+            result += splitted2[index]
+        
+        await interaction.followup.send(result)
+    
+    @app_commands.command(name="debase7777ify", description="Base 7777 by galaxy_fl3x")
+    async def debase7777ify(self, interaction: Interaction, text: str):
+        await interaction.response.defer(thinking=True)
+        splitted1 = list(data.alphabet)
+        splitted2 = list(data.base7777_key)
+        result = ""
+        for char in list(text):
+            index = splitted2.index(char)
+            result += splitted1[index]
+        
+        await interaction.followup.send(result)
 # i will add this but not this time :(
 # https://colornames.org/search/json/?hex=FF0000
 

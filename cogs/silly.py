@@ -25,64 +25,32 @@ class Silly(commands.Cog):
         self.bot = bot
     
     
-    @commands.hybrid_command(name="pox",description="Say him 'p0x38 is retroslop >:3'")
-    async def pox(self, ctx: commands.Context):
-        await ctx.send("p0x38 is retroslop >:3")
+    @app_commands.command(name="pox",description="Say him 'p0x38 is retroslop >:3'")
+    async def pox_message(self, ctx: discord.Interaction):
+        await ctx.response.send_message("p0x38 is retroslop >:3")
 
-    @commands.hybrid_command(name="timedate", description="Shows time in bot's time")
-    async def timedate(self, ctx: commands.Context):
+    @app_commands.command(name="timedate", description="Shows time in bot's time")
+    async def get_bot_timestamp(self, ctx: discord.Interaction):
         timec = datetime.now(pytz.timezone("Asia/Tokyo"))
         
-        await ctx.send(f"I'm on {datetime.strftime(timec, '%Y-%m-%d %H:%M:%S%z')} :3")
-    
-    @commands.hybrid_command(name="is_gay",description="Checks if someone is gay")
-    @app_commands.describe(member="Member to check")
-    async def is_gay(self, ctx: commands.Context,member: discord.Member):
-        randum = int(random.random()*100)
-        dac = stuff.check_map(randum,100)
-        
-        await ctx.send(f"<@{member.id}> is {dac} gay!")
-    
-    @commands.hybrid_command(name="is_femboy",description="Checks if someone is femboy")
-    @app_commands.describe(member="Member to check")
-    async def is_femboy(self, ctx: commands.Context,member: discord.Member):
-        randum = int(random.random()*100)
-        dac = stuff.check_map(randum,100)
-        
-        await ctx.send(f"<@{member.id}> is {dac} femboy!")
-    
-    @commands.hybrid_command(name="is_freaky",description="Checks if someone is freaky")
-    @app_commands.describe(member="Member to check")
-    async def is_freaky(self, ctx: commands.Context,member: discord.Member):
-        randum = int(random.random()*100)
-        dac = stuff.check_map(randum,100)
-        
-        await ctx.send(f"<@{member.id}> is {dac} freaky!")
-    
-    @commands.hybrid_command(name="check_is",description="Checks if someone is it")
-    @app_commands.describe(member="Member to check")
-    async def check_is(self, ctx: commands.Context,member: discord.Member,namet:str):
-        randum = int(random.random()*100)
-        dac = stuff.check_map(randum,100)
-        
-        await ctx.send(f"<@{member.id}> is {dac} {namet}!")
+        await ctx.response.send_message(f"I'm on {datetime.strftime(timec, '%Y-%m-%d %H:%M:%S%z')} :3")
     
     @commands.hybrid_command(name="randnum",description="Generates random value between min and max")
     @app_commands.describe(min="Minimum integer")
     @app_commands.describe(max="Maximum integer")
-    async def randnum(self, ctx: commands.Context,min = 0, max = 1):
+    async def random_number(self, ctx: commands.Context,min = 0, max = 1):
         await ctx.send(f"Result: {random.uniform(min,max)}")
     
     @commands.hybrid_command(name="8ball",description="8ball like that; credit by galaxy_fl3x")
     @app_commands.describe(ke="Text to check if it is")
-    async def eightball(self, ctx: commands.Context,*,ke):
+    async def eight_ball(self, ctx: commands.Context,*,ke):
         choice = random.choice(data.tyc)
         
         await ctx.send(f"{ke}, result: {choice}")
     
     @commands.hybrid_command(name="meow",description="Make me say miaw :3")
     @app_commands.describe(put_face="Enables extra face such as :3")
-    async def meow(self, ctx: commands.Context,put_face:str):
+    async def say_meow(self, ctx: commands.Context,put_face:str):
         add_face = True if put_face.lower() in ("yes", "true") else False
         arrays = data.meows_with_extraformat
         
@@ -94,7 +62,7 @@ class Silly(commands.Cog):
         await ctx.send(f"{random.choice(arrays)}")
     
     @commands.hybrid_command(name="poxleaderboard",description="Shows leaderboard in server who said pox for many times")
-    async def poxleaderboard(self, ctx: commands.Context):
+    async def poxword_leaderboard(self, ctx: commands.Context):
         if self.bot.db_connection:
             async with self.bot.db_connection.execute("SELECT user_id, pox_count FROM leaderboard ORDER BY pox_count DESC LIMIT 32") as cursor:
                 lbdata = await cursor.fetchall()
@@ -120,9 +88,9 @@ class Silly(commands.Cog):
     
     
     @commands.hybrid_command(name="wordleaderboard",description="Shows leaderboard in server who has yapping all times")
-    async def leaderbood(self, ctx: commands.Context):
+    async def word_leaderboard(self, ctx: commands.Context):
         if self.bot.db_connection:
-            async with self.bot.db_connection.execute("SELECT user_id, amount FROM poxcoins ORDER BY amount DESC LIMIT 32") as cursor:
+            async with self.bot.db_connection.execute("SELECT user_id, amount FROM words ORDER BY amount DESC LIMIT 32") as cursor:
                 lbdata = await cursor.fetchall()
             
             desc = ""
@@ -145,7 +113,7 @@ class Silly(commands.Cog):
             await ctx.reply("sowwy bot has no connection with Database... 3:")
     
     @commands.hybrid_command(name="ispoxactive",description="Check if pox is active")
-    async def ispoxactive(self, ctx: commands.Context):
+    async def is_pox_active(self, ctx: commands.Context):
         now = datetime.now(pytz.timezone('Asia/Tokyo'))
         isWeekday = stuff.is_weekday(now)
         isFaster = stuff.is_specificweek(now,2) or stuff.is_specificweek(now,4)
@@ -163,7 +131,7 @@ class Silly(commands.Cog):
         await ctx.send(f"{status}\nMay the result varies by the time, cuz it is very advanced to do... also this is not accurate.")
     
     @commands.hybrid_command(name="nyan_cat",description="Nyan cat :D")
-    async def nyan_cat(self, ctx: commands.Context):
+    async def nyan_cat_image(self, ctx: commands.Context):
         try:
             url = os.path.dirname(__file__)
             url2 = os.path.join(url,"images/nyancat_big.gif")
@@ -177,22 +145,22 @@ class Silly(commands.Cog):
     
     @commands.hybrid_command(name="befreaky",description="like a emoji... ahn 🥵")
     @app_commands.describe(by="A member to being freaky to me")
-    async def freaky(self, ctx: commands.Context, by: discord.Member|None = None):
+    async def be_freaky(self, ctx: commands.Context, by: discord.Member|None = None):
         titl = stuff.format_extra(random.choice(data.very_freaky)).format(f"<@{by.id if by else ctx.author.id}>")
         desc = "...EEWWWWWW!!!!!1!1 3:"
         
         await ctx.reply(f"{titl}\n{desc}")
     
     @commands.hybrid_command(name="pox_schooldate",description="Check if owner of the bot is in school")
-    async def check_schooldate(self,ctx):
+    async def check_if_pox_is_school_day(self,ctx):
         await ctx.send(f"Pox is {"in school day 3:" if stuff.is_weekday(datetime.now(pytz.timezone("Asia/Tokyo"))) else "not in school day! >:D"}")
     
     @commands.hybrid_command(name="emoticon",description="Sends random emoticon")
-    async def emoticon(self,ctx):
+    async def send_emoticon(self,ctx):
         await ctx.send(random.choice(data.emoticons))
     
     @commands.hybrid_command(name="a_jorb",description="yeah")
-    async def ajob(self, ctx):
+    async def a_job_message(self, ctx):
         try:
             await ctx.send("Today, I'll be talking about one of humanity's biggest fears")
             await asyncio.sleep(2)
@@ -200,18 +168,9 @@ class Silly(commands.Cog):
         except Exception as e:
             logger.error(e)
     
-    @commands.hybrid_command(name="vibecheck",description="Checks vibe")
-    @app_commands.describe(user="Member to check")
-    async def vibecheck(self, ctx: commands.Context, user: Optional[discord.Member|discord.User] = None):
-        if user is None:
-            user = ctx.author
-        rand = round(random.randrange(0,100))
-        
-        await ctx.reply(f"<@{user.id}>'s Vibe percent: {rand} %! :3")
-    
     @commands.hybrid_command(name="boop",description="boops someone")
     @app_commands.describe(user="Member to boop")
-    async def boop(self, ctx: commands.Context, user: discord.Member):
+    async def boop_member(self, ctx: commands.Context, user: discord.Member):
         await ctx.send(f"<@{user.id}> boop :3")
     
     @commands.hybrid_command(name="idek", description="idek.")
@@ -220,7 +179,7 @@ class Silly(commands.Cog):
     
     @commands.hybrid_command(name="t0001",description="...")
     @app_commands.describe(id="...")
-    async def t0001(self, ctx: commands.Context, id: int = 0):
+    async def pox_bad_word_thing_i_guess(self, ctx: commands.Context, id: int = 0):
         svp = ""
         desc = ""
         
@@ -252,7 +211,7 @@ class Silly(commands.Cog):
     
     @commands.hybrid_command(name="markov", description="Generates random lines with Markov-chain")
     @app_commands.describe(amount="Times to generate, up to 16 iterations (lines).")
-    async def markv(self, ctx: commands.Context, amount: Optional[int]):
+    async def generate_markovified_text(self, ctx: commands.Context, amount: Optional[int]):
         await ctx.defer()
         amount = stuff.clamp(amount or 1, 1, 16)
         text2 = stuff.get_markov_dataset("2")
@@ -287,7 +246,7 @@ class Silly(commands.Cog):
     
     @commands.hybrid_command(name="anomaly_markov", description="Generates SCP-like anomaly with Markov-chain")
     @app_commands.describe(amount="Times to generate, up to 16 iterations (lines).")
-    async def markv_abnormality(self, ctx: commands.Context, amount: Optional[int]):
+    async def generate_markovified_anomaly_text(self, ctx: commands.Context, amount: Optional[int]):
         await ctx.defer()
         amount = stuff.clamp(amount or 1, 1, 16)
         text2 = stuff.get_markov_dataset("1")
@@ -319,7 +278,7 @@ class Silly(commands.Cog):
         await ctx.reply(embed=e)
     
     @commands.hybrid_command(name="targetclose", description="Target Closing Algorithm")
-    async def targetclose(self, ctx: commands.Context, target_value: Optional[float], concurrents: Optional[int]):
+    async def algorithm_closing_to_target(self, ctx: commands.Context, target_value: Optional[float], concurrents: Optional[int]):
         conc = stuff.clamp(concurrents or 10, 1, 20)
         histories = [stuff.approach_target(target_value or 20) for _ in range(conc)]
         
@@ -355,7 +314,7 @@ class Silly(commands.Cog):
             await ctx.reply(file=file, embed=e)
     
     @commands.hybrid_command(name="computer_latency",description="Calculates hosted computer's latency")
-    async def checklat(self, ctx: commands.Context, delay: Optional[float]):
+    async def check_computer_latency(self, ctx: commands.Context, delay: Optional[float]):
         delay = stuff.clamp_f(delay or 150, 10,1000)/10
         delay2 = delay / 1000
         iterations = int(1/delay2)

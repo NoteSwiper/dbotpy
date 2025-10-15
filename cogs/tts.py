@@ -39,7 +39,7 @@ class TTS(commands.Cog):
     
     @ttsgroup.command(name="google")
     @app_commands.autocomplete(lang=googletts_autocomplete)
-    async def googletts(self, interaction: discord.Interaction, text: str, slow: Optional[bool] = False, lang: Optional[str] = "en"):
+    async def google_text_to_speech(self, interaction: discord.Interaction, text: str, slow: Optional[bool] = False, lang: Optional[str] = "en"):
         await interaction.response.defer(thinking=True)
         
         if lang is None: lang = "en"
@@ -65,7 +65,7 @@ class TTS(commands.Cog):
             logger.exception(f"{e}")
     
     @ttsgroup.command(name="piper")
-    async def pipertts(self, interaction: discord.Interaction, text: str):
+    async def piper_text_to_speech(self, interaction: discord.Interaction, text: str):
         await interaction.response.defer(thinking=True)
         
         abuffer = BytesIO()
@@ -92,7 +92,7 @@ class TTS(commands.Cog):
             logger.exception(f"{e}")
     """
     @ttsgroup.command(name="kokoro")
-    async def kokorotts(self, interaction: discord.Interaction, text: str):
+    async def kokoro_text_to_speech(self, interaction: discord.Interaction, text: str):
         await interaction.response.defer(thinking=True)
         
         abuffer = BytesIO()
@@ -114,7 +114,7 @@ class TTS(commands.Cog):
             logger.exception(f"{e}")
     """
     @ttsgroup.command(name="espeak")
-    async def espeaktts(self, interaction: discord.Interaction, text: str, lang: Optional[str], slow: Optional[bool]):
+    async def espeak_text_to_speech(self, interaction: discord.Interaction, text: str, lang: Optional[str], slow: Optional[bool]):
         if not 'voxpopuli' in sys.modules:
             logger.error("voxpopuli package is not installed in this project. ignoring...")
             await interaction.response.send_message(f"It seems the environment used in discord bot doesn't have `voxpopuli` package.")
@@ -147,7 +147,7 @@ class TTS(commands.Cog):
             logger.exception(f"{e}")
     
     @ttsgroup.command(name="edge-tts")
-    async def edgetts(self, interaction: discord.Interaction, text: str, lang: Optional[str], slow: Optional[bool]):
+    async def edge_text_to_speech(self, interaction: discord.Interaction, text: str, lang: Optional[str], slow: Optional[bool]):
         if not "edge_tts" in sys.modules:
             logger.error("edge_tts package is not installed in this project. ignoring...")
             await interaction.response.send_message(f"It seems the environment used in discord bot doesn't have `edge_tts` package.")

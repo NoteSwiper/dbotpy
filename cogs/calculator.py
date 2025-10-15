@@ -12,7 +12,7 @@ class Calculator(commands.Cog):
     calc_group = app_commands.Group(name="calc", description="A group for calculator cogs")
     
     @calc_group.command(name="percentage")
-    async def percentage(self, interaction: discord.Interaction, value: int, max: Optional[int]):
+    async def calculate_percentage(self, interaction: discord.Interaction, value: int, max: Optional[int]):
         if max is None:
             max = 100
         

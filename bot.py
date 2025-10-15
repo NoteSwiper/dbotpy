@@ -65,7 +65,8 @@ class PoxBot(commands.AutoShardedBot):
                     logger.info(f"{message.author.id}, {prompt.replace('pox!','')}")
                     await self.process_commands(message)
                 else:
-                    await message.reply(prompt)
+                    if not message.author.bot or message.author.system:
+                        await message.reply(prompt)
         else:
             logger.error("Couldn't find 'bot.user'")
         
@@ -73,27 +74,28 @@ class PoxBot(commands.AutoShardedBot):
         separated_words = message.content.lower().split(" ")
         
         if self.db_connection and self.user:
-            user_id = str(message.author.id)
-            if separated_words:
-                if self.db_connection:
-                    async with self.db_connection.execute("SELECT amount FROM poxcoins WHERE user_id = ?", (user_id,)) as cursor:
-                        result = await cursor.fetchone()
-                    
-                    if result:
-                        new = result[0] + len(separated_words)
-                        await self.db_connection.execute("UPDATE poxcoins SET amount = ? WHERE user_id = ?", (new, user_id))
-                    else:
-                        await self.db_connection.execute("INSERT INTO poxcoins (user_id, amount) VALUES (?, ?)", (user_id, len(separated_words)))
-            
-            pox_count = len([item for item in separated_words if "pox" in item])
-            async with self.db_connection.execute("SELECT pox_count FROM leaderboard WHERE user_id = ?", (user_id,)) as cursor:
-                result = await cursor.fetchone()
-            
-            if result:
-                new = result[0] + pox_count
-                await self.db_connection.execute("UPDATE leaderboard SET pox_count = ? WHERE user_id = ?", (new, user_id))
-            else:
-                await self.db_connection.execute("INSERT INTO leaderboard (user_id, pox_count) VALUES (?, ?)", (user_id, pox_count))
+            if not message.author.bot or not message.author.system:
+                user_id = str(message.author.id)
+                if separated_words:
+                    if self.db_connection:
+                        async with self.db_connection.execute("SELECT amount FROM words WHERE user_id = ?", (user_id,)) as cursor:
+                            result = await cursor.fetchone()
+
+                        if result:
+                            new = result[0] + len(separated_words)
+                            await self.db_connection.execute("UPDATE words SET amount = ? WHERE user_id = ?", (new, user_id))
+                        else:
+                            await self.db_connection.execute("INSERT INTO words (user_id, amount) VALUES (?, ?)", (user_id, len(separated_words)))
+
+                pox_count = len([item for item in separated_words if "pox" in item])
+                async with self.db_connection.execute("SELECT pox_count FROM leaderboard WHERE user_id = ?", (user_id,)) as cursor:
+                    result = await cursor.fetchone()
+
+                if result:
+                    new = result[0] + pox_count
+                    await self.db_connection.execute("UPDATE leaderboard SET pox_count = ? WHERE user_id = ?", (new, user_id))
+                else:
+                    await self.db_connection.execute("INSERT INTO leaderboard (user_id, pox_count) VALUES (?, ?)", (user_id, pox_count))
         
         if message.content.startswith("pox!"):
             self.handled_messages += 1

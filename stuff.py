@@ -166,9 +166,9 @@ def setup_database(database):
         )
     """)
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS poxcoins (
+        CREATE TABLE IF NOT EXISTS words (
             user_id TEXT PRIMARY KEY,
-            amount REAL
+            amount INTEGER
         )
     """)
     conn.commit()

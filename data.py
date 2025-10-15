@@ -187,3 +187,6 @@ VoiceEngineType = {
     'Google': 'gtts',
     'eSpeak': 'espeak',
 }
+
+alphabet = "abcdefghijklmnopqrstuvwxyz"
+base7777_key = "1/'_3-~√8+(&?!90q4$57:2\"6)"
