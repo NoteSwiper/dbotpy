@@ -292,6 +292,9 @@ class Management(commands.Cog):
         else:
             datacf['Platform info'] = platform.platform()
         
+        if self.bot.launch_time2:
+            embed.add_field(name="Launch time", value=stuff.get_formatted_from_seconds(round(time.time() - self.bot.launch_time2)))
+        
         # last existance c139a7df8e73d7609ee20aeeee0cc274733dbe60
         
         if ctx.guild:

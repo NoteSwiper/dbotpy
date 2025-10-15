@@ -18,7 +18,7 @@ class PoxBot(commands.AutoShardedBot):
         super().__init__(*args,**kwargs)
         
         self.launch_time = datetime.datetime.now(datetime.UTC)
-        self.lanuch_time2 = time()
+        self.launch_time2 = time()
         self.handled_messages = 0
         self.db_connection = None
         self.commit_hash = ""

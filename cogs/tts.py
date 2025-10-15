@@ -10,11 +10,14 @@ from discord import app_commands
 from edge_tts import Communicate
 from gtts import gTTS
 from piper import PiperVoice
+#from kokoro import KPipeline
+#import torch
 
 from logger import logger
 import stuff
 
 voice = PiperVoice.load("./voices/en_US-ryan-low.onnx")
+#pipeline = KPipeline(lang_code='a')
 
 class TTS(commands.Cog):
     def __init__(self,bot):
@@ -80,14 +83,36 @@ class TTS(commands.Cog):
             logger.exception(f"{e}")
             return
         
-        dfile = discord.File(abuffer, filename=f"PiperTTS-.mp3")
+        dfile = discord.File(abuffer, filename=f"PiperTTS.mp3")
         
         try:
             await interaction.followup.send(f"Gotcha! :D\nType: Piper TTS, Input: {text}",file=dfile)
         except Exception as e:
             await interaction.followup.send(f"An error occured while sending speech: {e}")
             logger.exception(f"{e}")
-    
+    """
+    @ttsgroup.command(name="kokoro")
+    async def kokorotts(self, interaction: discord.Interaction, text: str):
+        await interaction.response.defer(thinking=True)
+        
+        abuffer = BytesIO()
+        try:
+            gen = pipeline(text,voice="af_nicole")
+            
+            abuffer.seek(0)
+        except Exception as e:
+            await interaction.followup.send(f"An error occured while generating speech: {e}")
+            logger.exception(f"{e}")
+            return
+        
+        dfile = discord.File(abuffer, filename=f"PiperTTS.mp3")
+        
+        try:
+            await interaction.followup.send(f"Gotcha! :D\nType: Piper TTS, Input: {text}",file=dfile)
+        except Exception as e:
+            await interaction.followup.send(f"An error occured while sending speech: {e}")
+            logger.exception(f"{e}")
+    """
     @ttsgroup.command(name="espeak")
     async def espeaktts(self, interaction: discord.Interaction, text: str, lang: Optional[str], slow: Optional[bool]):
         if not 'voxpopuli' in sys.modules:
