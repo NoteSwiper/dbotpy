@@ -1,8 +1,8 @@
 # dbotpy
 
-> TL;DR
+> [!IMPORTANT]
 >
-> an 
+> Project moved to [https://github.com/NoteSwiper/pox-bot](https://github.com/NoteSwiper/pox-bot).
 
 just an my bot's source code lolol
 
@@ -27,7 +27,7 @@ also package requirements are stored in `requirements.txt`.
 install packages with doing this:
 
 ```sh
-$ pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
@@ -41,11 +41,10 @@ TOKEN=<BOT_TOKEN>
 just do this:
 
 ```sh
-$ python main.py
+python main.py
 ```
 
 > [!warning]
-> 
 > I'm not even responsible, if you MESSED IT UP.
 
 ## Copyright
@@ -56,10 +55,10 @@ I do not own the images or anything that is not made by me.
 
 no need to contribute, cuz am single developer rn
 
-# Attribution
+## Attribution
 
 minimal attribution if you want:
 
-```
+```plain
 ripped from noteswiper
 ```

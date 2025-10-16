@@ -146,7 +146,7 @@ class TTS(commands.Cog):
             await interaction.followup.send(f"An error occured while sending speech: {e}")
             logger.exception(f"{e}")
     
-    @ttsgroup.command(name="edge-tts")
+    @ttsgroup.command(name="edge")
     async def edge_text_to_speech(self, interaction: discord.Interaction, text: str, lang: Optional[str], slow: Optional[bool]):
         if not "edge_tts" in sys.modules:
             logger.error("edge_tts package is not installed in this project. ignoring...")

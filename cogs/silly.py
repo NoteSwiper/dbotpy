@@ -29,13 +29,13 @@ class Silly(commands.Cog):
     async def pox_message(self, ctx: discord.Interaction):
         await ctx.response.send_message("p0x38 is retroslop >:3")
 
-    @app_commands.command(name="timedate", description="Shows time in bot's time")
+    @app_commands.command(name="bot_timezone", description="Shows time in bot's time")
     async def get_bot_timestamp(self, ctx: discord.Interaction):
         timec = datetime.now(pytz.timezone("Asia/Tokyo"))
         
         await ctx.response.send_message(f"I'm on {datetime.strftime(timec, '%Y-%m-%d %H:%M:%S%z')} :3")
     
-    @commands.hybrid_command(name="randnum",description="Generates random value between min and max")
+    @commands.hybrid_command(name="generate_number",description="Generates random value between min and max")
     @app_commands.describe(min="Minimum integer")
     @app_commands.describe(max="Maximum integer")
     async def random_number(self, ctx: commands.Context,min = 0, max = 1):
@@ -48,7 +48,7 @@ class Silly(commands.Cog):
         
         await ctx.send(f"{ke}, result: {choice}")
     
-    @commands.hybrid_command(name="meow",description="Make me say miaw :3")
+    @commands.hybrid_command(name="say_meow",description="Make me say miaw :3")
     @app_commands.describe(put_face="Enables extra face such as :3")
     async def say_meow(self, ctx: commands.Context,put_face:str):
         add_face = True if put_face.lower() in ("yes", "true") else False
@@ -61,7 +61,7 @@ class Silly(commands.Cog):
         
         await ctx.send(f"{random.choice(arrays)}")
     
-    @commands.hybrid_command(name="poxleaderboard",description="Shows leaderboard in server who said pox for many times")
+    @commands.hybrid_command(name="pox_leaderboard",description="Shows leaderboard in server who said pox for many times")
     async def poxword_leaderboard(self, ctx: commands.Context):
         if self.bot.db_connection:
             async with self.bot.db_connection.execute("SELECT user_id, pox_count FROM leaderboard ORDER BY pox_count DESC LIMIT 32") as cursor:
@@ -87,7 +87,7 @@ class Silly(commands.Cog):
             await ctx.reply("sowwy bot has no connection with Database... 3:")
     
     
-    @commands.hybrid_command(name="wordleaderboard",description="Shows leaderboard in server who has yapping all times")
+    @commands.hybrid_command(name="word_leaderboard",description="Shows leaderboard in server who has yapping all times")
     async def word_leaderboard(self, ctx: commands.Context):
         if self.bot.db_connection:
             async with self.bot.db_connection.execute("SELECT user_id, amount FROM words ORDER BY amount DESC LIMIT 32") as cursor:
@@ -112,7 +112,7 @@ class Silly(commands.Cog):
         else:
             await ctx.reply("sowwy bot has no connection with Database... 3:")
     
-    @commands.hybrid_command(name="ispoxactive",description="Check if pox is active")
+    @commands.hybrid_command(name="is_owner_active",description="Check if pox is active")
     async def is_pox_active(self, ctx: commands.Context):
         now = datetime.now(pytz.timezone('Asia/Tokyo'))
         isWeekday = stuff.is_weekday(now)
@@ -143,7 +143,7 @@ class Silly(commands.Cog):
         except Exception as e:
             await ctx.send(f"Error! {e} 3:")
     
-    @commands.hybrid_command(name="befreaky",description="like a emoji... ahn 🥵")
+    @commands.hybrid_command(name="freaky_response",description="like a emoji... ahn 🥵")
     @app_commands.describe(by="A member to being freaky to me")
     async def be_freaky(self, ctx: commands.Context, by: discord.Member|None = None):
         titl = stuff.format_extra(random.choice(data.very_freaky)).format(f"<@{by.id if by else ctx.author.id}>")
@@ -151,15 +151,15 @@ class Silly(commands.Cog):
         
         await ctx.reply(f"{titl}\n{desc}")
     
-    @commands.hybrid_command(name="pox_schooldate",description="Check if owner of the bot is in school")
+    @commands.hybrid_command(name="is_owner_school_date",description="Check if owner of the bot is in school")
     async def check_if_pox_is_school_day(self,ctx):
         await ctx.send(f"Pox is {"in school day 3:" if stuff.is_weekday(datetime.now(pytz.timezone("Asia/Tokyo"))) else "not in school day! >:D"}")
     
-    @commands.hybrid_command(name="emoticon",description="Sends random emoticon")
+    @commands.hybrid_command(name="generate_emoticon",description="Sends random emoticon")
     async def send_emoticon(self,ctx):
         await ctx.send(random.choice(data.emoticons))
     
-    @commands.hybrid_command(name="a_jorb",description="yeah")
+    @commands.hybrid_command(name="job_application",description="yeah")
     async def a_job_message(self, ctx):
         try:
             await ctx.send("Today, I'll be talking about one of humanity's biggest fears")
@@ -168,7 +168,7 @@ class Silly(commands.Cog):
         except Exception as e:
             logger.error(e)
     
-    @commands.hybrid_command(name="boop",description="boops someone")
+    @commands.hybrid_command(name="boop_member",description="boops someone")
     @app_commands.describe(user="Member to boop")
     async def boop_member(self, ctx: commands.Context, user: discord.Member):
         await ctx.send(f"<@{user.id}> boop :3")
@@ -209,7 +209,7 @@ class Silly(commands.Cog):
         
         await ctx.reply(embed=embed)
     
-    @commands.hybrid_command(name="markov", description="Generates random lines with Markov-chain")
+    @commands.hybrid_command(name="generate_markov", description="Generates random lines with Markov-chain")
     @app_commands.describe(amount="Times to generate, up to 16 iterations (lines).")
     async def generate_markovified_text(self, ctx: commands.Context, amount: Optional[int]):
         await ctx.defer()
@@ -244,7 +244,7 @@ class Silly(commands.Cog):
         e.set_footer(text="Please be aware about the response may includes sensitive expressions, harmful expressions and an expression that may affect to the humans.")
         await ctx.reply(embed=e)
     
-    @commands.hybrid_command(name="anomaly_markov", description="Generates SCP-like anomaly with Markov-chain")
+    @commands.hybrid_command(name="generate_anomaly_markov", description="Generates SCP-like anomaly with Markov-chain")
     @app_commands.describe(amount="Times to generate, up to 16 iterations (lines).")
     async def generate_markovified_anomaly_text(self, ctx: commands.Context, amount: Optional[int]):
         await ctx.defer()
@@ -277,7 +277,7 @@ class Silly(commands.Cog):
             e.add_field(name=f"Line {i+1}",value=result, inline=False)
         await ctx.reply(embed=e)
     
-    @commands.hybrid_command(name="targetclose", description="Target Closing Algorithm")
+    @commands.hybrid_command(name="target_close_algorithm", description="Target Closing Algorithm")
     async def algorithm_closing_to_target(self, ctx: commands.Context, target_value: Optional[float], concurrents: Optional[int]):
         conc = stuff.clamp(concurrents or 10, 1, 20)
         histories = [stuff.approach_target(target_value or 20) for _ in range(conc)]

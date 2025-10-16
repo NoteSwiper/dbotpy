@@ -3,12 +3,23 @@
 	"disable_existing_loggers": false,
 	"formatters": {
 		"default": {
-			"format": "'[{asctime}] [{levelname:<8}] {name}: {message}",
+			"format": "[{asctime}] [{levelname:<8}] {name}: {message}",
+			"datefmt": "%Y-%m-%d %H:%M:%S",
+			"style": "{"
+		},
+		"detailed": {
+			"format": "[{asctime}] [{levelname:<8}] {name}: {message}",
 			"datefmt": "%Y-%m-%d %H:%M:%S",
 			"style": "{"
 		}
 	},
 	"handlers": {
+		"console": {
+			"class": "logging.StreamHandler",
+			"level": "DEBUG",
+			"formatter": "default",
+			"stream": "ext://sys.stdout"
+		},
 		"file": {
 			"class": "logging.handlers.RotatingFileHandler",
 			"level": "DEBUG",
@@ -20,11 +31,25 @@
 		}
 	},
 	"loggers": {
-		"discord.http": {
-			"level": "INFO"
+		"__main__": {
+			"level": "DEBUG",
+			"handlers": ["file"],
+			"propagate": false
+		},
+		"bot": {
+			"level": "DEBUG",
+			"handlers": ["file"],
+			"propagate": false
+		},
+		"discord": {
+			"level": "INFO",
+			"handlers": ["file"],
+			"propagate": false
 		},
 		"stuff": {
-			"level": "INFO"
+			"level": "DEBUG",
+			"handlers": ["file"],
+			"propagate": false
 		}
 	}
 }

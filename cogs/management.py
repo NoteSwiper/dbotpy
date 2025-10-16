@@ -132,7 +132,7 @@ class Management(commands.Cog):
         
         await ctx.reply(f"this guild is `{reply}` rating! ;3")
     
-    @commands.hybrid_command(name="serverinfo",description="Shows information for server")
+    @commands.hybrid_command(name="get_server_info",description="Shows information for server")
     async def check_server_info(self, ctx: commands.Context):
         guild = ctx.guild
         if guild and not guild.unavailable == True:
@@ -161,7 +161,7 @@ class Management(commands.Cog):
         else:
             await ctx.send("It seems the guild unavailable.")
     
-    @commands.hybrid_command(name="check_user", description="Checks user")
+    @commands.hybrid_command(name="get_user_info", description="Checks user")
     async def check_user_info(self, ctx: commands.Context, user: discord.Member):
         try:
             if user:
@@ -197,7 +197,7 @@ class Management(commands.Cog):
             await ctx.send(f"Error! {e} 3:")
             logger.error(f"Error: {e}")
     
-    @commands.hybrid_command(name="check_role", description="Checks role")
+    @commands.hybrid_command(name="get_role_info", description="Checks role")
     async def check_role_info(self, ctx: commands.Context, role: discord.Role):
         try:
             if role:
@@ -233,7 +233,7 @@ class Management(commands.Cog):
             await ctx.send(f"Error! {e} 3:")
             logger.error(f"Error: {e}")
 
-    @commands.hybrid_command(name="dm",description="DMs to a member")
+    @commands.hybrid_command(name="send_dm",description="DMs to a member")
     @commands.has_permissions(manage_permissions=True,manage_messages=True)
     @app_commands.describe(member="Member to send")
     @app_commands.describe(text="Text to send")
@@ -263,7 +263,7 @@ class Management(commands.Cog):
         ]
         return choices[:3]
     
-    @commands.hybrid_command(name="hi",description="replys as hi")
+    @commands.hybrid_command(name="say_hi",description="replys as hi")
     async def say_hi(self, ctx: commands.Context):
         await ctx.send("Hi")
     
@@ -272,7 +272,7 @@ class Management(commands.Cog):
     async def say_something(self, ctx: commands.Context, *, msg: str):
         await ctx.send(msg)
     
-    @commands.hybrid_command(name="sayuwuify",aliases=["talk_silly","speak_silly","send_silly","saysilly"],description="Sends a message to everyone that you did")
+    @commands.hybrid_command(name="uwuified_say",aliases=["talk_silly","speak_silly","send_silly","saysilly"],description="Sends a message to everyone that you did")
     @app_commands.describe(msg="Message to send")
     async def uwuified_say_something(self, ctx: commands.Context, *, msg: str):
         await ctx.send(f"{stuff.to_uwu(msg)} :3")
@@ -288,7 +288,7 @@ class Management(commands.Cog):
         else:
             await ctx.send("This command can only be used in a server! 3:")
     
-    @commands.hybrid_command(name="uptime", description="How long this bot is in f**king session")
+    @commands.hybrid_command(name="bot_uptime", description="How long this bot is in f**king session")
     async def check_uptime(self,ctx: commands.Context):
         global start_time
         await ctx.send("me hav been for {}..! >:3".format(stuff.get_formatted_from_seconds(round(time.time() - self.bot.launch_time2))))

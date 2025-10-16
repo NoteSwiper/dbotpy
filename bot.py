@@ -1,3 +1,4 @@
+import atexit
 import datetime
 import os
 import subprocess
@@ -42,14 +43,34 @@ class PoxBot(commands.AutoShardedBot):
             logger.error("Git command not found. make sure to check if Git is installed.")
     
     async def on_ready(self):
-        await self.change_presence(activity=discord.CustomActivity(name="meow~ :3"))
+        await self.change_presence(activity=discord.CustomActivity(name="a random bot :3"))
         stuff.setup_database("./leaderboard.db")
         
         for fname in os.listdir('./cogs'):
             if fname.endswith('.py'):
-                await self.load_extension(f'cogs.{fname[:-3]}')
+                logger.debug(f"Loading extension {fname[:-3]}")
+                try:
+                    await self.load_extension(f'cogs.{fname[:-3]}')
+                except Exception as e:
+                    logger.exception(f"Exception thrown while loading extension {fname[:-3]}.")
         
-        await self.tree.sync()
+        if self.user:
+            logger.info("\n".join((
+                "The client is logged into a bot!",
+                f"User ID: {self.user.id}",
+                f"Username: {self.user.name}",
+                f"Connected Guilds: {len(self.guilds)}"
+            )))
+        else:
+            logger.info("It seems client is connected with bot, but no user object found.")
+        
+        logger.debug("Syncing commands...")
+        try:
+            await self.tree.sync()
+        except discord.HTTPException as e:
+            logger.error(f"HTTPException thrown while trying to sync commands: {e}")
+        except Exception as e:
+            logger.exception(f"Unexcepted error thrown!")
     
     async def on_message(self,message: discord.Message):
         self.handled_messages += 1
@@ -103,19 +124,25 @@ class PoxBot(commands.AutoShardedBot):
             await self.process_commands(message)
     
     async def on_command_error(self,ctx: commands.Context, e: commands.CommandError):
-        logger.exception(f"{e}: {"\n".join(traceback.format_exception(e))}")
-        await ctx.reply(f"{e} 3:")
+        logger.exception(f"Exception thrown: {e}!")
+        embed = discord.Embed(title="Error occured!",description=f"Exception thrown while processing command: {e}")
+        await ctx.reply(embed=embed)
     
     async def on_interaction(self,inter: discord.Interaction):
         if inter.type == discord.InteractionType.application_command:
-            logger.info(f"{inter.user.display_name}, {inter.command.name if inter.command else "Unknown"}, {inter.command_failed}")
+            logger.info(f"{inter.user.display_name} issued {inter.command.name if inter.command else "Unknown"}!")
+            if inter.command_failed:
+                embed = discord.Embed(title="Command thrown error",description="The requested command returned exception!")
+                logger.error("The requested command thrown error!")
+                await inter.followup.send(embed=embed)
     
-    async def close(self):
+    async def close(self) -> None:
         if self.db_connection:
+            await self.db_connection.commit()
             await self.db_connection.close()
             logger.debug("Database closed")
-        await super().close()
-                
+        return await super().close()
+        
     def get_launch_time(self) -> datetime.datetime:
         return self.launch_time
 

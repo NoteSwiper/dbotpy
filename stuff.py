@@ -23,12 +23,7 @@ dotenv.load_dotenv()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-handler = logging.handlers.RotatingFileHandler(
-    filename="logs/stuff.log",
-    encoding='utf-8',
-    maxBytes=32*1024*1024,
-    backupCount=128,
-)
+handler = logging.handlers.RotatingFileHandler( filename="logs/stuff.log", encoding='utf-8', maxBytes=32*1024*1024, backupCount=128)
 dt_fmt = '%Y-%m-%d %H:%M:%S'
 formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
 
@@ -38,6 +33,7 @@ logger.addHandler(handler)
 voice = Voice(lang="us")
 
 def get_bot_token():
+    logger.debug("Retrieving token...")
     return os.getenv('TOKEN')
 
 def _find_key_recursive(config: dict,key) -> bool:
@@ -73,13 +69,13 @@ def cset(config: dict, key, value):
 
 async def isInt(s):
     try:
-        logger.debug(f"Is {s} integer?")
+        logger.debug(f"Checking if {s} is integer")
         int(s,10)
     except ValueError:
-        logger.debug(f"Nopeee!!11!@ 3:<")
+        logger.debug(f"{s} is not integer")
         return False
     else:
-        logger.debug("Yes sir! :3")
+        logger.debug(f"{s} is integer")
         return True
 
 async def change_toggles(config,key):
@@ -92,28 +88,28 @@ async def change_toggles(config,key):
     return
 
 def censor(pf: ProfanityFilter,text: str):
-    logger.debug(f"Process {text}")
+    logger.debug(f"Processing {text} with ProfanityFilter")
     return pf.append_words(text)
 
 def muffle(text: str):
     result = []
     for char in text:
-        logger.debug(f"Char: {char}")
+        logger.debug(f"Target: {char}")
         target = char
         if target.isalpha():
-            logger.debug(f"The char is Alphabet")
+            logger.debug(f"The char is alphabet")
             if target not in 'whpmnuf':
-                logger.debug(f"Target will be muffled.")
+                logger.debug(f"The char {char} will be replaced with 'm'")
                 target = "m"
         
-        logger.debug(f"Appending...")
+        logger.debug(f"Appending text {char}")
         result.append(target)
 
-    logger.debug(f"Result: {"".join(result)} ({text})")
+    logger.debug(f"Process completed!\nResult: {"".join(result)} ({text})")
     return "".join(result) + f" ({text})"
 
 def uwuify(uwu,text: str):
-    logger.debug(f"Text {text} will be uwuified.")
+    logger.debug(f"Processing {text} with Uwuifier")
     return uwu.uwuify(text)
 
 def save(config: dict):
@@ -123,18 +119,19 @@ def save(config: dict):
 
 def create_dir_if_not_exists(path):
     if not os.path.exists(path):
-        logger.debug("Folder not found. makedirectory")
+        logger.debug(f"Folder {path} not found. creating directory...")
         os.makedirs(path,exist_ok=True)
 
 def format_extra(input:str):
-    logger.debug(f"Format extra: {input}")
+    logger.debug(f"Input: {input}")
     if not input:
+        logger.debug(f"Input shouldn't be empty")
         return ""
     
     result = ""
     i = 0
     while i < len(input):
-        logger.debug(f"Index: {i}, Char: {input[i]}")
+        logger.debug(f"Index: {i}, {input[i]}")
         char = input[i]
         if char == '+':
             logger.debug("Char is '+'")
@@ -157,6 +154,7 @@ def format_extra(input:str):
     return result
 
 def setup_database(database):
+    logger.debug("Setting database...")
     conn = sqlite3.connect(database)
     cursor = conn.cursor()
     cursor.execute("""
@@ -407,16 +405,19 @@ def to_uwu(text: str) -> str:
         words = text.split(" ")
         
         for index, word in enumerate(words):
+            logger.debug(f"Index: {index}, {word}")
             if not word:
+                logger.debug("The word is empty! skipping...")
                 continue
             
             if word[0] in ("@","#",":","<","$","!","&","/"):
+                logger.debug("The word including special characters! skipping...")
                 continue
             
             stutter = ""
             for regex, replace_to in regex_maps:
                 if re.match(regex,word):
-                    print(f"Resolver: {regex}, {replace_to}, {word}")
+                    logger.debug(f"Resolving {regex} as {replace_to} with {word}")
                     word = re.sub(regex,replace_to,word)
             
             if unicodedata.category(word[0]).lower().startswith("l"):
@@ -466,6 +467,7 @@ def get_latest_commit_message():
         return None
 
 def espeak_to_bytesio(text: str):
+    logger.debug("Converting voice into audio...")
     sbuffer = voice.to_audio(text)
     return sbuffer
 

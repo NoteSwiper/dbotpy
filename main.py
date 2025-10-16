@@ -1,3 +1,4 @@
+import atexit
 import subprocess
 import uuid
 import time
@@ -203,10 +204,11 @@ async def on_interaction(inter: discord.Interaction):
 
 if __name__ == "__main__":
     if not bot_token:
+        print("You should to put the bot token to 'TOKEN' in .env!")
         exit()
     else:
         try:
-            bot.run(bot_token)
+            bot.run(bot_token, log_handler=None)
         except KeyboardInterrupt:
             print("Shutting down...")
             pass
